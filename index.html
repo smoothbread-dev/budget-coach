@@ -34,18 +34,21 @@
        HEADER
   ══════════════════════════════════════════ -->
   <header class="app-header">
-    <h1>🎯 Budget Coach</h1>
-    <div class="header-tabs">
-      <button class="tab-btn active" id="tab-btn-planner"   onclick="switchTab('planner')">Plan</button>
-      <button class="tab-btn"        id="tab-btn-recurring" onclick="switchTab('recurring')">Recurring</button>
-      <button class="tab-btn"        id="tab-btn-history"   onclick="switchTab('history')">History</button>
-      <button class="tab-btn"        id="tab-btn-defaults"  onclick="switchTab('defaults')">Defaults</button>
+  
+    <div class="app-logo">
+      <span>🪙</span>
+      <span>Budget Coach</span>
     </div>
-    <div class="nav-right">
-      <button id="logout-btn" class="signout-btn">
-        Sign Out
-      </button>
-    </div>
+  
+    <nav class="nav-tabs">
+      <button class="nav-tab-btn active" id="tab-btn-planner"   onclick="switchTab('planner')">Plan</button>
+      <button class="nav-tab-btn"        id="tab-btn-recurring" onclick="switchTab('recurring')">Recurring</button>
+      <button class="nav-tab-btn"        id="tab-btn-history"   onclick="switchTab('history')">History</button>
+      <button class="nav-tab-btn"        id="tab-btn-defaults"  onclick="switchTab('defaults')">Defaults</button>
+    </nav>
+  
+    <button class="btn btn-secondary signout-btn" id="logout-btn">Sign Out</button>
+  
   </header>
   
   <!-- ══════════════════════════════════════════
