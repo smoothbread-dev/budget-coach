@@ -8,23 +8,6 @@
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════
-     HEADER
-══════════════════════════════════════════ -->
-<header class="app-header">
-  <h1>🎯 Budget Coach</h1>
-  <div class="header-tabs">
-    <button class="tab-btn active" id="tab-btn-planner"   onclick="switchTab('planner')">Plan</button>
-    <button class="tab-btn"        id="tab-btn-recurring" onclick="switchTab('recurring')">Recurring</button>
-    <button class="tab-btn"        id="tab-btn-history"   onclick="switchTab('history')">History</button>
-    <button class="tab-btn"        id="tab-btn-defaults"  onclick="switchTab('defaults')">Defaults</button>
-  </div>
-  <div class="nav-right">
-    <button id="logout-btn" class="signout-btn">
-      Sign Out
-    </button>
-  </div>
-</header>
 
 <!-- Auth Modal -->
 <div id="auth-modal" style="display:none;">
@@ -46,6 +29,25 @@
 <div id="app"></div>
 
 <template id="app-template">
+
+  <!-- ══════════════════════════════════════════
+       HEADER
+  ══════════════════════════════════════════ -->
+  <header class="app-header">
+    <h1>🎯 Budget Coach</h1>
+    <div class="header-tabs">
+      <button class="tab-btn active" id="tab-btn-planner"   onclick="switchTab('planner')">Plan</button>
+      <button class="tab-btn"        id="tab-btn-recurring" onclick="switchTab('recurring')">Recurring</button>
+      <button class="tab-btn"        id="tab-btn-history"   onclick="switchTab('history')">History</button>
+      <button class="tab-btn"        id="tab-btn-defaults"  onclick="switchTab('defaults')">Defaults</button>
+    </div>
+    <div class="nav-right">
+      <button id="logout-btn" class="signout-btn">
+        Sign Out
+      </button>
+    </div>
+  </header>
+  
   <!-- ══════════════════════════════════════════
        MAIN
   ══════════════════════════════════════════ -->
@@ -243,234 +245,234 @@
     </div>
   
   </main>
+
+  <!-- ══════════════════════════════════════════
+       COACH ME BUTTON
+  ══════════════════════════════════════════ -->
+  <div class="coach-me-wrap" id="coach-me-wrap">
+    <button class="coach-me-btn" id="coach-me-btn" onclick="runAIReview()">
+      ✨ Coach Me — Analyse My Plan
+    </button>
+  </div>
+  
+  <!-- ══════════════════════════════════════════
+       SAVE TOAST
+  ══════════════════════════════════════════ -->
+  <div class="save-toast" id="save-toast">
+    <div class="spinner" id="toast-spinner"></div>
+    <span id="toast-label">Saving…</span>
+  </div>
+  
+  <!-- ══════════════════════════════════════════
+       FIRST-TIME SETUP PANEL
+  ══════════════════════════════════════════ -->
+  <div class="panel-overlay" id="setup-panel-overlay">
+    <div class="panel-box">
+      <div class="panel-title">👋 Welcome to Budget Coach!</div>
+      <div class="panel-subtitle">
+        Let's set your default income and savings goal. These will be used as starting values
+        whenever you open a new month — you can always change them per month or update them
+        in the Defaults tab.
+      </div>
+      <div class="panel-field">
+        <label class="panel-label">Default Monthly Income (RM)</label>
+        <div class="currency-wrap">
+          <span class="currency-prefix">RM</span>
+          <input class="panel-input" id="setup-income" type="number" placeholder="e.g. 5000" />
+        </div>
+      </div>
+      <div class="panel-field">
+        <label class="panel-label">Default Savings Goal (%)</label>
+        <input class="panel-input" id="setup-goal" type="number" placeholder="e.g. 20" min="0" max="100" />
+      </div>
+      <div class="panel-actions">
+        <button class="btn btn-secondary" onclick="skipSetup()">Skip for now</button>
+        <button class="btn btn-primary"   onclick="saveSetup()">Let's go! 🚀</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ══════════════════════════════════════════
+       USE DEFAULTS PROMPT
+  ══════════════════════════════════════════ -->
+  <div class="panel-overlay" id="defaults-prompt-overlay">
+    <div class="panel-box">
+      <div class="panel-title" id="defaults-prompt-title">New Month</div>
+      <div class="panel-subtitle" id="defaults-prompt-subtitle"></div>
+      <div class="prompt-option" onclick="applyDefaults()">
+        <div class="prompt-option-title">✅ Use my defaults</div>
+        <div class="prompt-option-sub" id="defaults-prompt-values"></div>
+      </div>
+      <div class="prompt-option" onclick="enterOwnValues()">
+        <div class="prompt-option-title">✏️ Enter my own values for this month</div>
+        <div class="prompt-option-sub">I'll type in a different income or savings goal</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ══════════════════════════════════════════
+       INCOME PANEL
+  ══════════════════════════════════════════ -->
+  <div class="panel-overlay" id="income-panel-overlay" onclick="handlePanelOverlayClick(event,'income-panel-overlay')">
+    <div class="panel-box">
+      <div class="panel-title">Expected Income 💰</div>
+      <div class="panel-subtitle">Enter your expected take-home income for this month.</div>
+      <div class="panel-field">
+        <label class="panel-label">Income Amount</label>
+        <div class="currency-wrap">
+          <span class="currency-prefix">RM</span>
+          <input class="panel-input" id="panel-income" type="number" placeholder="0.00" />
+        </div>
+      </div>
+      <div class="panel-actions">
+        <button class="btn btn-secondary" onclick="closePanel('income-panel-overlay')">Cancel</button>
+        <button class="btn btn-primary"   onclick="saveIncomePanel()">Save</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ══════════════════════════════════════════
+       SAVINGS GOAL PANEL
+  ══════════════════════════════════════════ -->
+  <div class="panel-overlay" id="goal-panel-overlay" onclick="handlePanelOverlayClick(event,'goal-panel-overlay')">
+    <div class="panel-box">
+      <div class="panel-title">Savings Goal 🎯</div>
+      <div class="panel-subtitle">What % of your income do you want to save this month? Set to 0 to skip.</div>
+      <div class="panel-field">
+        <label class="panel-label">Target Savings %</label>
+        <input class="panel-input" id="panel-goal" type="number" placeholder="e.g. 20" min="0" max="100" />
+      </div>
+      <div class="panel-actions">
+        <button class="btn btn-secondary" onclick="closePanel('goal-panel-overlay')">Cancel</button>
+        <button class="btn btn-primary"   onclick="saveGoalPanel()">Save</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ══════════════════════════════════════════
+       DEFAULT INCOME PANEL
+  ══════════════════════════════════════════ -->
+  <div class="panel-overlay" id="default-income-panel-overlay" onclick="handlePanelOverlayClick(event,'default-income-panel-overlay')">
+    <div class="panel-box">
+      <div class="panel-title">Default Income 💰</div>
+      <div class="panel-subtitle">Suggested whenever you open a new month with no income set.</div>
+      <div class="panel-field">
+        <label class="panel-label">Default Income (RM)</label>
+        <div class="currency-wrap">
+          <span class="currency-prefix">RM</span>
+          <input class="panel-input" id="panel-default-income" type="number" placeholder="0.00" />
+        </div>
+      </div>
+      <div class="panel-actions">
+        <button class="btn btn-secondary" onclick="closePanel('default-income-panel-overlay')">Cancel</button>
+        <button class="btn btn-primary"   onclick="saveDefaultIncomePanel()">Save</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ══════════════════════════════════════════
+       DEFAULT GOAL PANEL
+  ══════════════════════════════════════════ -->
+  <div class="panel-overlay" id="default-goal-panel-overlay" onclick="handlePanelOverlayClick(event,'default-goal-panel-overlay')">
+    <div class="panel-box">
+      <div class="panel-title">Default Savings Goal 🎯</div>
+      <div class="panel-subtitle">Suggested whenever you open a new month with no savings goal set.</div>
+      <div class="panel-field">
+        <label class="panel-label">Default Savings Goal (%)</label>
+        <input class="panel-input" id="panel-default-goal" type="number" placeholder="e.g. 20" min="0" max="100" />
+      </div>
+      <div class="panel-actions">
+        <button class="btn btn-secondary" onclick="closePanel('default-goal-panel-overlay')">Cancel</button>
+        <button class="btn btn-primary"   onclick="saveDefaultGoalPanel()">Save</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ══════════════════════════════════════════
+       RECURRING ITEM PANEL
+  ══════════════════════════════════════════ -->
+  <div class="panel-overlay" id="recurring-panel-overlay" onclick="handlePanelOverlayClick(event,'recurring-panel-overlay')">
+    <div class="panel-box">
+      <div class="panel-title" id="recurring-panel-title">Add Recurring Item</div>
+      <div class="panel-subtitle">This item will appear in the dropdown when adding recurring expenses to any month's plan.</div>
+      <div class="panel-field">
+        <label class="panel-label">Item Name</label>
+        <input class="panel-input" id="panel-rec-name" type="text" placeholder="e.g. Rent" />
+      </div>
+      <div class="panel-field">
+        <label class="panel-label">Default Amount (RM)</label>
+        <div class="currency-wrap">
+          <span class="currency-prefix">RM</span>
+          <input class="panel-input" id="panel-rec-amount" type="number" placeholder="0.00" />
+        </div>
+      </div>
+      <div class="panel-actions">
+        <button class="btn btn-secondary" onclick="closePanel('recurring-panel-overlay')">Cancel</button>
+        <button class="btn btn-primary"   id="recurring-panel-save-btn" onclick="saveRecurringPanel()">Add</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ══════════════════════════════════════════
+       EDIT PLAN ITEM PANEL
+  ══════════════════════════════════════════ -->
+  <div class="panel-overlay" id="edit-item-panel-overlay" onclick="handlePanelOverlayClick(event,'edit-item-panel-overlay')">
+    <div class="panel-box">
+      <div class="panel-title">Edit Item ✏️</div>
+      <div class="panel-subtitle">Update this item's details.</div>
+      <input type="hidden" id="edit-item-id" />
+      <div class="panel-field">
+        <label class="panel-label">Item Name</label>
+        <input class="panel-input" id="edit-item-name" type="text" placeholder="Item name" />
+      </div>
+      <div class="panel-field">
+        <label class="panel-label">Amount (RM)</label>
+        <div class="currency-wrap">
+          <span class="currency-prefix">RM</span>
+          <input class="panel-input" id="edit-item-amount" type="number" placeholder="0.00" />
+        </div>
+      </div>
+      <div class="panel-field">
+        <label class="panel-label">Category</label>
+        <select class="panel-select" id="edit-item-category" onchange="toggleEditFundedField()">
+          <option value="needs">Need</option>
+          <option value="wants">Want</option>
+        </select>
+      </div>
+      <div class="panel-field">
+        <label class="panel-label">Type</label>
+        <select class="panel-select" id="edit-item-type" onchange="toggleEditFundedField()">
+          <option value="recurring">Recurring</option>
+          <option value="oneoff">One-off</option>
+        </select>
+      </div>
+      <div id="edit-funded-wrap" style="display:none; margin-bottom:14px">
+        <label class="funded-check-wrap">
+          <input type="checkbox" id="edit-item-funded" />
+          <span class="funded-check-label">💰 Funded from saved-up money (won't affect projected savings)</span>
+        </label>
+      </div>
+      <div class="panel-actions">
+        <button class="btn btn-secondary" onclick="closePanel('edit-item-panel-overlay')">Cancel</button>
+        <button class="btn btn-primary"   onclick="saveEditItem()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ══════════════════════════════════════════
+       HISTORY DETAIL MODAL
+  ══════════════════════════════════════════ -->
+  <div class="modal-overlay" id="history-modal" onclick="handleModalOverlayClick(event)">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <span class="modal-title" id="modal-month-title">—</span>
+        <button class="modal-close" onclick="closeHistoryModal()">✕</button>
+      </div>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+  
 </template>
-
-
-<!-- ══════════════════════════════════════════
-     COACH ME BUTTON
-══════════════════════════════════════════ -->
-<div class="coach-me-wrap" id="coach-me-wrap">
-  <button class="coach-me-btn" id="coach-me-btn" onclick="runAIReview()">
-    ✨ Coach Me — Analyse My Plan
-  </button>
-</div>
-
-<!-- ══════════════════════════════════════════
-     SAVE TOAST
-══════════════════════════════════════════ -->
-<div class="save-toast" id="save-toast">
-  <div class="spinner" id="toast-spinner"></div>
-  <span id="toast-label">Saving…</span>
-</div>
-
-<!-- ══════════════════════════════════════════
-     FIRST-TIME SETUP PANEL
-══════════════════════════════════════════ -->
-<div class="panel-overlay" id="setup-panel-overlay">
-  <div class="panel-box">
-    <div class="panel-title">👋 Welcome to Budget Coach!</div>
-    <div class="panel-subtitle">
-      Let's set your default income and savings goal. These will be used as starting values
-      whenever you open a new month — you can always change them per month or update them
-      in the Defaults tab.
-    </div>
-    <div class="panel-field">
-      <label class="panel-label">Default Monthly Income (RM)</label>
-      <div class="currency-wrap">
-        <span class="currency-prefix">RM</span>
-        <input class="panel-input" id="setup-income" type="number" placeholder="e.g. 5000" />
-      </div>
-    </div>
-    <div class="panel-field">
-      <label class="panel-label">Default Savings Goal (%)</label>
-      <input class="panel-input" id="setup-goal" type="number" placeholder="e.g. 20" min="0" max="100" />
-    </div>
-    <div class="panel-actions">
-      <button class="btn btn-secondary" onclick="skipSetup()">Skip for now</button>
-      <button class="btn btn-primary"   onclick="saveSetup()">Let's go! 🚀</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════
-     USE DEFAULTS PROMPT
-══════════════════════════════════════════ -->
-<div class="panel-overlay" id="defaults-prompt-overlay">
-  <div class="panel-box">
-    <div class="panel-title" id="defaults-prompt-title">New Month</div>
-    <div class="panel-subtitle" id="defaults-prompt-subtitle"></div>
-    <div class="prompt-option" onclick="applyDefaults()">
-      <div class="prompt-option-title">✅ Use my defaults</div>
-      <div class="prompt-option-sub" id="defaults-prompt-values"></div>
-    </div>
-    <div class="prompt-option" onclick="enterOwnValues()">
-      <div class="prompt-option-title">✏️ Enter my own values for this month</div>
-      <div class="prompt-option-sub">I'll type in a different income or savings goal</div>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════
-     INCOME PANEL
-══════════════════════════════════════════ -->
-<div class="panel-overlay" id="income-panel-overlay" onclick="handlePanelOverlayClick(event,'income-panel-overlay')">
-  <div class="panel-box">
-    <div class="panel-title">Expected Income 💰</div>
-    <div class="panel-subtitle">Enter your expected take-home income for this month.</div>
-    <div class="panel-field">
-      <label class="panel-label">Income Amount</label>
-      <div class="currency-wrap">
-        <span class="currency-prefix">RM</span>
-        <input class="panel-input" id="panel-income" type="number" placeholder="0.00" />
-      </div>
-    </div>
-    <div class="panel-actions">
-      <button class="btn btn-secondary" onclick="closePanel('income-panel-overlay')">Cancel</button>
-      <button class="btn btn-primary"   onclick="saveIncomePanel()">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════
-     SAVINGS GOAL PANEL
-══════════════════════════════════════════ -->
-<div class="panel-overlay" id="goal-panel-overlay" onclick="handlePanelOverlayClick(event,'goal-panel-overlay')">
-  <div class="panel-box">
-    <div class="panel-title">Savings Goal 🎯</div>
-    <div class="panel-subtitle">What % of your income do you want to save this month? Set to 0 to skip.</div>
-    <div class="panel-field">
-      <label class="panel-label">Target Savings %</label>
-      <input class="panel-input" id="panel-goal" type="number" placeholder="e.g. 20" min="0" max="100" />
-    </div>
-    <div class="panel-actions">
-      <button class="btn btn-secondary" onclick="closePanel('goal-panel-overlay')">Cancel</button>
-      <button class="btn btn-primary"   onclick="saveGoalPanel()">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════
-     DEFAULT INCOME PANEL
-══════════════════════════════════════════ -->
-<div class="panel-overlay" id="default-income-panel-overlay" onclick="handlePanelOverlayClick(event,'default-income-panel-overlay')">
-  <div class="panel-box">
-    <div class="panel-title">Default Income 💰</div>
-    <div class="panel-subtitle">Suggested whenever you open a new month with no income set.</div>
-    <div class="panel-field">
-      <label class="panel-label">Default Income (RM)</label>
-      <div class="currency-wrap">
-        <span class="currency-prefix">RM</span>
-        <input class="panel-input" id="panel-default-income" type="number" placeholder="0.00" />
-      </div>
-    </div>
-    <div class="panel-actions">
-      <button class="btn btn-secondary" onclick="closePanel('default-income-panel-overlay')">Cancel</button>
-      <button class="btn btn-primary"   onclick="saveDefaultIncomePanel()">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════
-     DEFAULT GOAL PANEL
-══════════════════════════════════════════ -->
-<div class="panel-overlay" id="default-goal-panel-overlay" onclick="handlePanelOverlayClick(event,'default-goal-panel-overlay')">
-  <div class="panel-box">
-    <div class="panel-title">Default Savings Goal 🎯</div>
-    <div class="panel-subtitle">Suggested whenever you open a new month with no savings goal set.</div>
-    <div class="panel-field">
-      <label class="panel-label">Default Savings Goal (%)</label>
-      <input class="panel-input" id="panel-default-goal" type="number" placeholder="e.g. 20" min="0" max="100" />
-    </div>
-    <div class="panel-actions">
-      <button class="btn btn-secondary" onclick="closePanel('default-goal-panel-overlay')">Cancel</button>
-      <button class="btn btn-primary"   onclick="saveDefaultGoalPanel()">Save</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════
-     RECURRING ITEM PANEL
-══════════════════════════════════════════ -->
-<div class="panel-overlay" id="recurring-panel-overlay" onclick="handlePanelOverlayClick(event,'recurring-panel-overlay')">
-  <div class="panel-box">
-    <div class="panel-title" id="recurring-panel-title">Add Recurring Item</div>
-    <div class="panel-subtitle">This item will appear in the dropdown when adding recurring expenses to any month's plan.</div>
-    <div class="panel-field">
-      <label class="panel-label">Item Name</label>
-      <input class="panel-input" id="panel-rec-name" type="text" placeholder="e.g. Rent" />
-    </div>
-    <div class="panel-field">
-      <label class="panel-label">Default Amount (RM)</label>
-      <div class="currency-wrap">
-        <span class="currency-prefix">RM</span>
-        <input class="panel-input" id="panel-rec-amount" type="number" placeholder="0.00" />
-      </div>
-    </div>
-    <div class="panel-actions">
-      <button class="btn btn-secondary" onclick="closePanel('recurring-panel-overlay')">Cancel</button>
-      <button class="btn btn-primary"   id="recurring-panel-save-btn" onclick="saveRecurringPanel()">Add</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════
-     EDIT PLAN ITEM PANEL
-══════════════════════════════════════════ -->
-<div class="panel-overlay" id="edit-item-panel-overlay" onclick="handlePanelOverlayClick(event,'edit-item-panel-overlay')">
-  <div class="panel-box">
-    <div class="panel-title">Edit Item ✏️</div>
-    <div class="panel-subtitle">Update this item's details.</div>
-    <input type="hidden" id="edit-item-id" />
-    <div class="panel-field">
-      <label class="panel-label">Item Name</label>
-      <input class="panel-input" id="edit-item-name" type="text" placeholder="Item name" />
-    </div>
-    <div class="panel-field">
-      <label class="panel-label">Amount (RM)</label>
-      <div class="currency-wrap">
-        <span class="currency-prefix">RM</span>
-        <input class="panel-input" id="edit-item-amount" type="number" placeholder="0.00" />
-      </div>
-    </div>
-    <div class="panel-field">
-      <label class="panel-label">Category</label>
-      <select class="panel-select" id="edit-item-category" onchange="toggleEditFundedField()">
-        <option value="needs">Need</option>
-        <option value="wants">Want</option>
-      </select>
-    </div>
-    <div class="panel-field">
-      <label class="panel-label">Type</label>
-      <select class="panel-select" id="edit-item-type" onchange="toggleEditFundedField()">
-        <option value="recurring">Recurring</option>
-        <option value="oneoff">One-off</option>
-      </select>
-    </div>
-    <div id="edit-funded-wrap" style="display:none; margin-bottom:14px">
-      <label class="funded-check-wrap">
-        <input type="checkbox" id="edit-item-funded" />
-        <span class="funded-check-label">💰 Funded from saved-up money (won't affect projected savings)</span>
-      </label>
-    </div>
-    <div class="panel-actions">
-      <button class="btn btn-secondary" onclick="closePanel('edit-item-panel-overlay')">Cancel</button>
-      <button class="btn btn-primary"   onclick="saveEditItem()">Save Changes</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════
-     HISTORY DETAIL MODAL
-══════════════════════════════════════════ -->
-<div class="modal-overlay" id="history-modal" onclick="handleModalOverlayClick(event)">
-  <div class="modal-sheet">
-    <div class="modal-header">
-      <span class="modal-title" id="modal-month-title">—</span>
-      <button class="modal-close" onclick="closeHistoryModal()">✕</button>
-    </div>
-    <div id="modal-body"></div>
-  </div>
-</div>
 
 <!-- 1. Supabase SDK first -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
