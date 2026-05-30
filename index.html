@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Budget Coach</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -468,6 +467,13 @@
   </div>
 </div>
 
+<!-- 1. Supabase SDK first -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- 2. Your Supabase config + auth -->
+<script src="supabase.js"></script>
+
+<!-- 3. Your existing app logic last -->
 <script src="app.js"></script>
 </body>
 </html>
