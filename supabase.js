@@ -25,18 +25,17 @@ sb.auth.onAuthStateChange((event, session) => {
 function showApp() {
   document.getElementById('auth-modal').style.display = 'none'
 
-  // Dynamically load your app content only after login
   const app = document.getElementById('app')
   app.style.display = 'block'
 
-  // If app content is already loaded, don't reload
   if (app.dataset.loaded) return
   app.dataset.loaded = 'true'
 
-  // Dynamically inject your main app HTML
-  app.innerHTML = getAppHTML()
+  // Clone from template and inject
+  const template = document.getElementById('app-template')
+  app.appendChild(template.content.cloneNode(true))
 
-  // Re-initialise your app logic after injecting HTML
+  // Re-initialise app logic
   if (typeof initApp === 'function') initApp()
 }
 
