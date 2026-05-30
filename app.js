@@ -51,6 +51,16 @@ function showToast(status) {
 // for this user and populates state.
 // ─────────────────────────────────────────
 async function loadFromSupabase() {
+  // ✅ Always reset state before loading — prevents previous user's
+  // data from leaking into the next user's session
+  state = {
+    defaults:       { income: 0, savingsGoal: 0 },
+    recurringItems: [],
+    currentMonth:   new Date().getMonth(),
+    currentYear:    new Date().getFullYear(),
+    months:         {}
+  };
+  
   const userId = currentUser.id;
 
   // 1. Load defaults
