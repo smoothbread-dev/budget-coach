@@ -391,8 +391,47 @@ function saveIncomePanel() {
   if (!val || val <= 0) { alert('Please enter a valid income amount.'); return; }
   currentMonthData().income = val;
   closePanel('income-panel-overlay');
-  render();
-  triggerSave(); // saves to Supabase via saveCurrentMonth()
+
+  // ✅ If savings goal is not yet set for this month,
+  // immediately prompt for it before rendering the app.
+  // This ensures both income AND goal are always set together.
+  const data = currentMonthData();
+  const goalNotSet = data.savingsGoal === null || data.savingsGoal === undefined;
+
+  if (goalNotSet) {
+    openGoalPanelMandatory();
+  } else {
+    render();
+    triggerSave();
+  }
+}
+
+// ─────────────────────────────────────────
+// MANDATORY GOAL PANEL
+// Called after income is set for the first
+// time. Cannot be dismissed — user MUST
+// enter a savings goal to proceed.
+// ─────────────────────────────────────────
+function openGoalPanelMandatory() {
+  document.getElementById('panel-goal').value = '';
+
+  // Update panel title and subtitle to explain why this is required
+  const title    = document.getElementById('goal-panel-title');
+  const subtitle = document.getElementById('goal-panel-subtitle');
+  if (title)    title.textContent    = '🎯 Set Your Savings Goal';
+  if (subtitle) subtitle.textContent = 'A savings goal is required to complete your monthly plan.';
+
+  // Hide the close/cancel button so user cannot skip
+  const cancelBtn = document.getElementById('goal-panel-cancel-btn');
+  if (cancelBtn) cancelBtn.style.display = 'none';
+
+  document.getElementById('goal-panel-overlay').classList.add('open');
+
+  // Block overlay click-to-dismiss for this mandatory flow
+  const overlay = document.getElementById('goal-panel-overlay');
+  overlay._mandatory = true;
+
+  setTimeout(() => document.getElementById('panel-goal').focus(), 100);
 }
 
 // ─────────────────────────────────────────
@@ -405,8 +444,22 @@ function openGoalPanel() {
 }
 
 function saveGoalPanel() {
-  const val = Math.min(100, Math.max(0, parseFloat(document.getElementById('panel-goal').value) || 0));
+  const val = Math.min(100, Math.max(0,
+    parseFloat(document.getElementById('panel-goal').value) || 0));
+
+  if (val <= 0) {
+    alert('Please enter a savings goal between 1 and 100%.');
+    return;
+  }
+
   currentMonthData().savingsGoal = val;
+
+  // ✅ Restore cancel button and mandatory flag for future normal use
+  const cancelBtn = document.getElementById('goal-panel-cancel-btn');
+  if (cancelBtn) cancelBtn.style.display = '';
+  const overlay = document.getElementById('goal-panel-overlay');
+  overlay._mandatory = false;
+
   closePanel('goal-panel-overlay');
   render();
   triggerSave();
@@ -964,7 +1017,12 @@ function handleModalOverlayClick(e) {
 // ─────────────────────────────────────────
 function closePanel(id) { document.getElementById(id).classList.remove('open'); }
 function handlePanelOverlayClick(e, id) {
-  if (e.target === document.getElementById(id)) closePanel(id);
+  const overlay = document.getElementById(id);
+
+  // ✅ If this panel is mandatory, clicking outside does nothing
+  if (overlay._mandatory) return;
+
+  if (e.target === overlay) closePanel(id);
 }
 
 // ─────────────────────────────────────────
