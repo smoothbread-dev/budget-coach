@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────
-const GROQ_API_KEY = 'YOUR_GROQ_API_KEY_HERE';
+const GROQ_API_KEY = 'GROQ_API_KEY_PLACEHOLDER';
 
 // ─────────────────────────────────────────
 // CONSTANTS
