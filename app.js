@@ -918,8 +918,3 @@ function resetAIReviewUI() {
   document.getElementById('ai-review-card').style.display = 'none';
   document.getElementById('ai-review-content').innerHTML  = '';
 }
-
-// ─────────────────────────────────────────
-// START
-// ─────────────────────────────────────────
-init();
