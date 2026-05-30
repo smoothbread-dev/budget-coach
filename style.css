@@ -30,45 +30,106 @@ body {
   min-height: 100vh;
 }
 
-/* ══════════════════════════════════════════
-   HEADER
-══════════════════════════════════════════ */
+/* ─────────────────────────────────────────
+   NAV BAR
+───────────────────────────────────────── */
 .app-header {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 16px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 0 20px;
+  height: 56px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 100;
   gap: 12px;
 }
 
-.app-header h1 {
-  font-size: 1.2rem;
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 700;
-  color: var(--accent);
-  letter-spacing: 0.5px;
+  font-size: 1rem;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.header-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+/* Nav tab group — scrollable on mobile */
+.nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;        /* Firefox */
+  flex: 1;
+  justify-content: center;
+}
 
-.tab-btn {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-muted);
+.nav-tabs::-webkit-scrollbar {
+  display: none;                /* Chrome/Safari */
+}
+
+.nav-tab-btn {
   padding: 6px 14px;
   border-radius: 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 0.82rem;
-  transition: all 0.2s;
-  white-space: nowrap;
+  white-space: nowrap;          /* prevent text wrapping */
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
 }
 
-.tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.nav-tab-btn:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+.nav-tab-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Sign out button */
+.signout-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+
+/* ─────────────────────────────────────────
+   MOBILE — tighten up spacing
+───────────────────────────────────────── */
+@media (max-width: 480px) {
+  .app-header {
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .app-logo span {
+    /* Hide the text "Budget Coach" on very small screens,
+       keep only the emoji icon */
+    display: none;
+  }
+
+  .nav-tab-btn {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+
+  .signout-btn {
+    padding: 6px 8px;
+    font-size: 0.75rem;
+  }
+}
 
 /* ══════════════════════════════════════════
    LAYOUT
