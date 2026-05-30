@@ -1,6 +1,6 @@
 // supabase.js
-const SUPABASE_URL = 'https://ovjoxowtubkzlbthnigw.supabase.co'                  // 👈 Project URL
-const SUPABASE_KEY = 'sb_publishable_gp9FtJKT8qIXxIzYqndXMw_IEhOdA3o'            // 👈 Publishable key
+const SUPABASE_URL = 'https://ovjoxowtubkzlbthnigw.supabase.co'
+const SUPABASE_KEY = 'sb_publishable_gp9FtJKT8qIXxIzYqndXMw_IEhOdA3o'
 
 const { createClient } = supabase
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY)
@@ -21,7 +21,6 @@ sb.auth.onAuthStateChange((event, session) => {
 })
 
 // ─── Show/Hide UI ─────────────────────────────────────────
-// ─── Show App (only called after confirmed auth) ───────────
 function showApp() {
   document.getElementById('auth-modal').style.display = 'none'
 
@@ -31,17 +30,26 @@ function showApp() {
   if (app.dataset.loaded) return
   app.dataset.loaded = 'true'
 
-  // Clone from template and inject
   const template = document.getElementById('app-template')
   app.appendChild(template.content.cloneNode(true))
 
-  // Re-initialise app logic
   if (typeof initApp === 'function') initApp()
 }
 
 // ─── Show Auth (clears app content on logout) ─────────────
 function showAuth() {
   document.getElementById('auth-modal').style.display = 'flex'
+
+  // ✅ Clear auth fields so previous user's credentials are never shown
+  document.getElementById('auth-email').value    = ''
+  document.getElementById('auth-password').value = ''
+
+  // ✅ Reset toggle state back to Sign In every time auth screen appears
+  isSignUp = false
+  document.getElementById('auth-title').textContent      = 'Welcome Back'
+  document.getElementById('auth-submit-btn').textContent  = 'Sign In'
+  document.getElementById('auth-toggle-btn').textContent  = "Don't have an account? Sign Up"
+  document.getElementById('auth-error').style.display     = 'none'
 
   // Clear app content completely on logout
   const app = document.getElementById('app')
@@ -53,27 +61,25 @@ function showAuth() {
 // ─── Toggle Sign In / Sign Up ─────────────────────────────
 document.getElementById('auth-toggle-btn').addEventListener('click', () => {
   isSignUp = !isSignUp
-  document.getElementById('auth-title').textContent = isSignUp
-    ? 'Create Your Account'
-    : 'Welcome Back'
-  document.getElementById('auth-submit-btn').textContent = isSignUp
-    ? 'Sign Up'
-    : 'Sign In'
-  document.getElementById('auth-toggle-btn').textContent = isSignUp
-    ? 'Already have an account? Sign In'
-    : "Don't have an account? Sign Up"
-  document.getElementById('auth-error').style.display = 'none'
+  document.getElementById('auth-title').textContent      = isSignUp ? 'Create Your Account' : 'Welcome Back'
+  document.getElementById('auth-submit-btn').textContent  = isSignUp ? 'Sign Up' : 'Sign In'
+  document.getElementById('auth-toggle-btn').textContent  = isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"
+  document.getElementById('auth-error').style.display     = 'none'
+
+  // ✅ Clear fields on every toggle
+  document.getElementById('auth-email').value    = ''
+  document.getElementById('auth-password').value = ''
 })
 
 // ─── Sign In / Sign Up Handler ────────────────────────────
 document.getElementById('auth-submit-btn').addEventListener('click', async () => {
-  const email = document.getElementById('auth-email').value.trim()
+  const email    = document.getElementById('auth-email').value.trim()
   const password = document.getElementById('auth-password').value.trim()
-  const errorEl = document.getElementById('auth-error')
+  const errorEl  = document.getElementById('auth-error')
 
   if (!email || !password) {
-    errorEl.textContent = 'Please enter both email and password.'
-    errorEl.style.display = 'block'
+    errorEl.textContent    = 'Please enter both email and password.'
+    errorEl.style.display  = 'block'
     return
   }
 
@@ -86,7 +92,7 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
   }
 
   if (result.error) {
-    errorEl.textContent = result.error.message
+    errorEl.textContent   = result.error.message
     errorEl.style.display = 'block'
   } else {
     errorEl.style.display = 'none'
@@ -98,5 +104,7 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
 document.addEventListener('click', async (e) => {
   if (e.target.id === 'logout-btn') {
     await sb.auth.signOut()
+    // ✅ showAuth() is triggered automatically via onAuthStateChange,
+    // which now handles field clearing and state reset ✅
   }
 })
