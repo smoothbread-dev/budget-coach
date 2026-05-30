@@ -15,7 +15,7 @@ const MONTHS = ['January','February','March','April','May','June',
 let bannerDismissedThisSession = false;
 
 // ─────────────────────────────────────────
-// STATE (persisted to localStorage)
+// STATE — now just in-memory, Supabase is source of truth
 // ─────────────────────────────────────────
 let state = {
   defaults:       { income: 0, savingsGoal: 0 },
@@ -26,19 +26,8 @@ let state = {
 };
 
 // ─────────────────────────────────────────
-// PERSISTENCE
+// TOAST (kept as-is, no localStorage involved)
 // ─────────────────────────────────────────
-let saveTimer = null;
-
-function triggerSave() {
-  showToast('saving');
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    localStorage.setItem('budgetCoach_v2', JSON.stringify(state));
-    showToast('saved');
-  }, 600);
-}
-
 function showToast(status) {
   const toast   = document.getElementById('save-toast');
   const spinner = document.getElementById('toast-spinner');
@@ -56,32 +45,161 @@ function showToast(status) {
   }
 }
 
-function loadState() {
-  const raw = localStorage.getItem('budgetCoach_v2');
-  if (raw) {
-    try {
-      const saved = JSON.parse(raw);
-      state = deepMerge(state, saved);
-      return true;
-    } catch(e) {}
-  }
-  return false;
-}
+// ─────────────────────────────────────────
+// SUPABASE — LOAD ALL DATA
+// Called once on login. Fetches everything
+// for this user and populates state.
+// ─────────────────────────────────────────
+async function loadFromSupabase() {
+  const userId = currentUser.id;
 
-function deepMerge(target, source) {
-  const out = { ...target };
-  for (const key of Object.keys(source)) {
-    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-      out[key] = deepMerge(target[key] || {}, source[key]);
-    } else {
-      out[key] = source[key];
-    }
+  // 1. Load defaults
+  const { data: defaults } = await sb
+    .from('user_defaults')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
+
+  if (defaults) {
+    state.defaults.income      = defaults.income;
+    state.defaults.savingsGoal = defaults.savings_goal;
   }
-  return out;
+
+  // 2. Load recurring items
+  const { data: recurring } = await sb
+    .from('recurring_items')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
+
+  if (recurring) {
+    // Map Supabase rows → our in-memory format
+    // We use the Supabase row id as our item id
+    state.recurringItems = recurring.map(r => ({
+      id:     r.id,
+      name:   r.name,
+      amount: r.amount
+    }));
+  }
+
+  // 3. Load all month plans
+  const { data: plans } = await sb
+    .from('month_plans')
+    .select('*')
+    .eq('user_id', userId);
+
+  if (plans) {
+    plans.forEach(plan => {
+      state.months[plan.month_key] = {
+        income:      plan.income,
+        savingsGoal: plan.savings_goal,
+        items:       plan.items || [],
+        aiReview:    plan.ai_review
+      };
+    });
+  }
 }
 
 // ─────────────────────────────────────────
-// HELPERS
+// SUPABASE — SAVE DEFAULTS
+// ─────────────────────────────────────────
+async function saveDefaults() {
+  showToast('saving');
+  const { error } = await sb
+    .from('user_defaults')
+    .upsert({
+      user_id:      currentUser.id,
+      income:       state.defaults.income,
+      savings_goal: state.defaults.savingsGoal,
+      updated_at:   new Date().toISOString()
+    }, { onConflict: 'user_id' });
+
+  if (error) console.error('saveDefaults error:', error);
+  else showToast('saved');
+}
+
+// ─────────────────────────────────────────
+// SUPABASE — SAVE RECURRING ITEMS
+// We use upsert for edits and a separate
+// delete call for removals.
+// ─────────────────────────────────────────
+async function saveRecurringItem(item) {
+  showToast('saving');
+
+  if (item._isNew) {
+    // INSERT — let Supabase generate the id
+    const { data, error } = await sb
+      .from('recurring_items')
+      .insert({
+        user_id: currentUser.id,
+        name:    item.name,
+        amount:  item.amount
+      })
+      .select()
+      .single();
+
+    if (error) { console.error('saveRecurringItem insert error:', error); return null; }
+    showToast('saved');
+    return data.id; // Return the real Supabase id
+  } else {
+    // UPDATE existing row
+    const { error } = await sb
+      .from('recurring_items')
+      .update({ name: item.name, amount: item.amount })
+      .eq('id', item.id)
+      .eq('user_id', currentUser.id);
+
+    if (error) console.error('saveRecurringItem update error:', error);
+    else showToast('saved');
+    return item.id;
+  }
+}
+
+async function deleteRecurringFromDB(id) {
+  const { error } = await sb
+    .from('recurring_items')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', currentUser.id);
+
+  if (error) console.error('deleteRecurring error:', error);
+}
+
+// ─────────────────────────────────────────
+// SUPABASE — SAVE MONTH PLAN
+// Called whenever items, income, goal, or
+// aiReview changes for the current month.
+// ─────────────────────────────────────────
+let saveTimer = null;
+
+function triggerSave() {
+  showToast('saving');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => saveCurrentMonth(), 600);
+}
+
+async function saveCurrentMonth() {
+  const key  = currentKey();
+  const data = currentMonthData();
+
+  const { error } = await sb
+    .from('month_plans')
+    .upsert({
+      user_id:      currentUser.id,
+      month_key:    key,
+      income:       data.income,
+      savings_goal: data.savingsGoal,
+      items:        data.items || [],
+      ai_review:    data.aiReview || null,
+      updated_at:   new Date().toISOString()
+    }, { onConflict: 'user_id,month_key' });
+
+  if (error) console.error('saveCurrentMonth error:', error);
+  else showToast('saved');
+}
+
+// ─────────────────────────────────────────
+// HELPERS (unchanged)
 // ─────────────────────────────────────────
 function monthKey(m, y)   { return `${y}-${String(m+1).padStart(2,'0')}`; }
 function monthLabel(m, y) { return `${MONTHS[m]} ${y}`; }
@@ -104,7 +222,7 @@ function fmt(n) {
 }
 
 // ─────────────────────────────────────────
-// BANNER — session only
+// BANNER — session only (unchanged)
 // ─────────────────────────────────────────
 function dismissBanner() {
   bannerDismissedThisSession = true;
@@ -123,19 +241,30 @@ function showBannerIfNeeded() {
     banner.style.display = 'flex';
     banner.classList.remove('hiding');
     banner.style.animation = 'none';
-    void banner.offsetWidth; // force reflow
+    void banner.offsetWidth;
     banner.style.animation = '';
   }
 }
 
 // ─────────────────────────────────────────
-// INIT
+// INIT — now async, loads from Supabase
 // ─────────────────────────────────────────
-function initApp() {
-  const hasData = loadState();
+async function initApp() {
+  // Show a loading state while we fetch
+  showToast('saving');
+  document.getElementById('toast-label').textContent = 'Loading…';
+
+  await loadFromSupabase();
+
+  showToast('saved');
+  document.getElementById('toast-label').textContent = '✓ Ready';
+
   updateMonthLabel();
 
-  if (!hasData) {
+  const hasDefaults = state.defaults.income > 0 || state.defaults.savingsGoal > 0;
+
+  if (!hasDefaults) {
+    // Brand new user — show first-time setup
     document.getElementById('setup-panel-overlay').classList.add('open');
     return;
   }
@@ -147,13 +276,16 @@ function initApp() {
 // ─────────────────────────────────────────
 // FIRST-TIME SETUP
 // ─────────────────────────────────────────
-function saveSetup() {
+async function saveSetup() {
   const income = parseFloat(document.getElementById('setup-income').value) || 0;
   const goal   = Math.min(100, Math.max(0, parseFloat(document.getElementById('setup-goal').value) || 0));
   state.defaults.income      = income;
   state.defaults.savingsGoal = goal;
   document.getElementById('setup-panel-overlay').classList.remove('open');
-  triggerSave();
+
+  // Save to Supabase instead of localStorage
+  await saveDefaults();
+
   checkAndPromptMonth();
   renderDefaultsTab();
 }
@@ -164,7 +296,7 @@ function skipSetup() {
 }
 
 // ─────────────────────────────────────────
-// MONTH PROMPT
+// MONTH PROMPT (unchanged logic)
 // ─────────────────────────────────────────
 function checkAndPromptMonth() {
   const data        = currentMonthData();
@@ -203,7 +335,7 @@ function enterOwnValues() {
 }
 
 // ─────────────────────────────────────────
-// TABS
+// TABS (unchanged)
 // ─────────────────────────────────────────
 function switchTab(tab) {
   ['planner','recurring','history','defaults'].forEach(t => {
@@ -219,7 +351,7 @@ function switchTab(tab) {
 }
 
 // ─────────────────────────────────────────
-// MONTH NAVIGATION
+// MONTH NAVIGATION (unchanged)
 // ─────────────────────────────────────────
 function changeMonth(dir) {
   state.currentMonth += dir;
@@ -227,7 +359,6 @@ function changeMonth(dir) {
   if (state.currentMonth < 0)  { state.currentMonth = 11; state.currentYear--; }
   updateMonthLabel();
   resetAIReviewUI();
-  triggerSave();
   checkAndPromptMonth();
 }
 
@@ -251,7 +382,7 @@ function saveIncomePanel() {
   currentMonthData().income = val;
   closePanel('income-panel-overlay');
   render();
-  triggerSave();
+  triggerSave(); // saves to Supabase via saveCurrentMonth()
 }
 
 // ─────────────────────────────────────────
@@ -280,11 +411,11 @@ function openDefaultIncomePanel() {
   setTimeout(() => document.getElementById('panel-default-income').focus(), 100);
 }
 
-function saveDefaultIncomePanel() {
+async function saveDefaultIncomePanel() {
   state.defaults.income = parseFloat(document.getElementById('panel-default-income').value) || 0;
   closePanel('default-income-panel-overlay');
   renderDefaultsTab();
-  triggerSave();
+  await saveDefaults(); // saves to Supabase
 }
 
 // ─────────────────────────────────────────
@@ -296,16 +427,16 @@ function openDefaultGoalPanel() {
   setTimeout(() => document.getElementById('panel-default-goal').focus(), 100);
 }
 
-function saveDefaultGoalPanel() {
+async function saveDefaultGoalPanel() {
   state.defaults.savingsGoal = Math.min(100, Math.max(0,
     parseFloat(document.getElementById('panel-default-goal').value) || 0));
   closePanel('default-goal-panel-overlay');
   renderDefaultsTab();
-  triggerSave();
+  await saveDefaults(); // saves to Supabase
 }
 
 // ─────────────────────────────────────────
-// DEFAULTS TAB RENDER
+// DEFAULTS TAB RENDER (unchanged)
 // ─────────────────────────────────────────
 function renderDefaultsTab() {
   document.getElementById('defaults-income-display').textContent =
@@ -316,6 +447,7 @@ function renderDefaultsTab() {
 
 // ─────────────────────────────────────────
 // RECURRING MASTER LIST
+// Now uses Supabase for all CRUD
 // ─────────────────────────────────────────
 let editingRecurringId = null;
 
@@ -342,29 +474,38 @@ function openRecurringPanel(id) {
   setTimeout(() => document.getElementById('panel-rec-name').focus(), 100);
 }
 
-function saveRecurringPanel() {
+async function saveRecurringPanel() {
   const name   = document.getElementById('panel-rec-name').value.trim();
   const amount = parseFloat(document.getElementById('panel-rec-amount').value);
   if (!name)                  { alert('Please enter an item name.'); return; }
   if (!amount || amount <= 0) { alert('Please enter a valid amount.'); return; }
 
   if (editingRecurringId) {
+    // Update in-memory
     const item = state.recurringItems.find(r => r.id === editingRecurringId);
     if (item) { item.name = name; item.amount = amount; }
+    // Update in Supabase
+    await saveRecurringItem({ id: editingRecurringId, name, amount });
   } else {
-    state.recurringItems.push({ id: Date.now(), name, amount });
+    // Insert into Supabase first to get the real id
+    const realId = await saveRecurringItem({ name, amount, _isNew: true });
+    if (realId) {
+      // Now store in-memory with the Supabase-generated id
+      state.recurringItems.push({ id: realId, name, amount });
+    }
   }
 
   closePanel('recurring-panel-overlay');
   renderRecurringMasterList();
-  triggerSave();
 }
 
-function deleteRecurringItem(id) {
+async function deleteRecurringItem(id) {
   if (!confirm('Remove this recurring item? Existing plan items won\'t be affected.')) return;
+  // Remove from in-memory
   state.recurringItems = state.recurringItems.filter(r => r.id !== id);
+  // Remove from Supabase
+  await deleteRecurringFromDB(id);
   renderRecurringMasterList();
-  triggerSave();
 }
 
 function renderRecurringMasterList() {
@@ -386,7 +527,7 @@ function renderRecurringMasterList() {
 }
 
 // ─────────────────────────────────────────
-// ADD ITEM FORM
+// ADD ITEM FORM (unchanged — triggerSave handles Supabase)
 // ─────────────────────────────────────────
 function toggleAddForm(cat) {
   const wrapper = document.getElementById(`add-form-${cat}`);
@@ -495,10 +636,11 @@ function addItem(cat) {
   if (!name)                  { alert('Please enter an item name.'); return; }
   if (!amount || amount <= 0) { alert('Please enter a valid amount.'); return; }
 
+  // Use Date.now() as a temporary in-memory id for items inside the JSONB array
   currentMonthData().items.push({ id: Date.now(), name, amount, category: cat, type, funded });
   document.getElementById(`add-form-${cat}`).style.display = 'none';
   render();
-  triggerSave();
+  triggerSave(); // saves entire month JSONB to Supabase
 }
 
 // ─────────────────────────────────────────
@@ -508,7 +650,7 @@ function deleteItem(id) {
   const data = currentMonthData();
   data.items = data.items.filter(i => i.id !== id);
   render();
-  triggerSave();
+  triggerSave(); // saves entire month JSONB to Supabase
 }
 
 // ─────────────────────────────────────────
@@ -553,11 +695,11 @@ function saveEditItem() {
 
   closePanel('edit-item-panel-overlay');
   render();
-  triggerSave();
+  triggerSave(); // saves entire month JSONB to Supabase
 }
 
 // ─────────────────────────────────────────
-// CALCULATIONS
+// CALCULATIONS (unchanged)
 // ─────────────────────────────────────────
 function calcTotals() {
   const data  = currentMonthData();
@@ -576,7 +718,7 @@ function calcTotals() {
 }
 
 // ─────────────────────────────────────────
-// RENDER — PLAN TAB
+// RENDER — PLAN TAB (unchanged)
 // ─────────────────────────────────────────
 function render() {
   const data = currentMonthData();
@@ -700,7 +842,7 @@ function renderItemList(cat, type) {
 }
 
 // ─────────────────────────────────────────
-// RENDER — HISTORY TAB
+// RENDER — HISTORY TAB (unchanged)
 // ─────────────────────────────────────────
 function renderHistory() {
   const grid    = document.getElementById('history-grid');
@@ -808,7 +950,7 @@ function handleModalOverlayClick(e) {
 }
 
 // ─────────────────────────────────────────
-// PANEL HELPERS
+// PANEL HELPERS (unchanged)
 // ─────────────────────────────────────────
 function closePanel(id) { document.getElementById(id).classList.remove('open'); }
 function handlePanelOverlayClick(e, id) {
@@ -816,7 +958,7 @@ function handlePanelOverlayClick(e, id) {
 }
 
 // ─────────────────────────────────────────
-// AI REVIEW
+// AI REVIEW (triggerSave now saves to Supabase)
 // ─────────────────────────────────────────
 async function runAIReview() {
   const data = currentMonthData();
@@ -889,7 +1031,7 @@ Keep the tone warm, coach-like, and honest. Format clearly with short paragraphs
     const json = await res.json();
     const text = json.choices?.[0]?.message?.content || 'No response received.';
     currentMonthData().aiReview = text;
-    triggerSave();
+    triggerSave(); // persists aiReview to Supabase
     showAIResult(text);
   } catch(e) {
     content.innerHTML = `
