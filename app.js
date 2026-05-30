@@ -406,42 +406,35 @@ function confirmDeleteMonth() {
 // the local state for that month.
 // ─────────────────────────────────────────
 async function deleteCurrentMonth() {
-  const key = monthKey(currentYear, currentMonth); // e.g. "2026-05"
-  const user = (await supabase.auth.getUser()).data.user;
-  if (!user) return;
+  const key = currentKey();
+  if (!currentUser) return;
 
   try {
-    // Show a subtle loading state on the button
     const btn = document.getElementById('month-delete-btn');
     if (btn) btn.textContent = '⏳';
 
-    const { error } = await supabase
+    const { error } = await sb
       .from('month_plans')
       .delete()
-      .eq('user_id', user.id)
+      .eq('user_id', currentUser.id)
       .eq('month_key', key);
 
     if (error) throw error;
 
     // ✅ Wipe the local in-memory data for this month
-    delete monthsData[key];
+    delete state.months[key];
 
-    // ✅ Hide the delete button since month is now empty
     if (btn) {
       btn.textContent = '🗑️';
       btn.classList.add('hidden');
     }
 
     // ✅ Re-render — will trigger fresh empty state for this month
-    render();
-
-    console.log(`🗑️ Month ${key} deleted successfully.`);
+    checkAndPromptMonth();
 
   } catch (err) {
     console.error('Failed to delete month:', err);
     alert('Something went wrong while deleting. Please try again.');
-
-    // Restore button emoji if failed
     const btn = document.getElementById('month-delete-btn');
     if (btn) btn.textContent = '🗑️';
   }
@@ -891,13 +884,14 @@ function render() {
   document.getElementById('wants-total').textContent = fmt(wantsTotal);
 
   // ── Delete button visibility ──────────────
-  const key = monthKey(currentYear, currentMonth);
-  const hasData = monthsData[key] && (
-    monthsData[key].income       !== undefined ||
-    monthsData[key].savingsGoal  !== undefined ||
-    (monthsData[key].items && monthsData[key].items.length > 0)
+  const key = currentKey();
+  const monthData = state.months[key];
+  const hasData = monthData && (
+    monthData.income      > 0                           ||
+    monthData.savingsGoal > 0                           ||
+    (monthData.items && monthData.items.length > 0)
   );
-
+  
   const deleteBtn = document.getElementById('month-delete-btn');
   if (deleteBtn) {
     deleteBtn.classList.toggle('hidden', !hasData);
