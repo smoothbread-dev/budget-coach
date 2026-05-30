@@ -95,7 +95,8 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
 })
 
 // ─── Sign Out ─────────────────────────────────────────────
-document.getElementById('logout-btn').addEventListener('click', async () => {
-  await sb.auth.signOut()
-  // onAuthStateChange handles showing auth screen automatically ✅
+document.addEventListener('click', async (e) => {
+  if (e.target.id === 'logout-btn') {
+    await sb.auth.signOut()
+  }
 })
