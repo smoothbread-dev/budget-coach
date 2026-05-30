@@ -409,6 +409,14 @@ async function deleteCurrentMonth() {
   const key = currentKey();
   if (!currentUser) return;
 
+  // ── Snapshot whether this is the real current month BEFORE deleting ──
+  const realMonth = new Date().getMonth();
+  const realYear  = new Date().getFullYear();
+  const isDeletingCurrentMonth = (
+    state.currentMonth === realMonth &&
+    state.currentYear  === realYear
+  );
+
   try {
     const btn = document.getElementById('month-delete-btn');
     if (btn) btn.textContent = '⏳';
@@ -421,7 +429,7 @@ async function deleteCurrentMonth() {
 
     if (error) throw error;
 
-    // ✅ Wipe the local in-memory data for this month
+    // ✅ Wipe local in-memory data for this month
     delete state.months[key];
 
     if (btn) {
@@ -429,8 +437,18 @@ async function deleteCurrentMonth() {
       btn.classList.add('hidden');
     }
 
-    // ✅ Re-render — will trigger fresh empty state for this month
-    checkAndPromptMonth();
+    if (isDeletingCurrentMonth) {
+      // They deleted the actual current month — let normal flow handle it
+      checkAndPromptMonth();
+    } else {
+      // ✅ They deleted a different month (accidental data) — 
+      // silently snap back to today without prompting
+      state.currentMonth = realMonth;
+      state.currentYear  = realYear;
+      updateMonthLabel();
+      resetAIReviewUI();
+      checkAndPromptMonth();
+    }
 
   } catch (err) {
     console.error('Failed to delete month:', err);
