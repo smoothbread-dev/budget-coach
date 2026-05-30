@@ -338,27 +338,21 @@
        SAVINGS GOAL PANEL
   ══════════════════════════════════════════ -->
   <div class="panel-overlay" id="goal-panel-overlay" onclick="handlePanelOverlayClick(event, 'goal-panel-overlay')">
-    <div class="panel">
-  
-      <div class="panel-header">
-        <div>
-          <div class="panel-title" id="goal-panel-title">💰 Savings Goal</div>
-          <div class="panel-subtitle" id="goal-panel-subtitle">What % of income do you want to save this month?</div>
+    <div class="panel-box">
+      <div class="panel-title" id="goal-panel-title">Savings Goal 🎯</div>
+      <div class="panel-subtitle" id="goal-panel-subtitle">What % of income do you want to save this month?</div>
+      <div class="panel-field">
+        <label class="panel-label">Savings Goal %</label>
+        <div class="currency-wrap">
+          <span class="currency-prefix">%</span>
+          <input class="panel-input" id="panel-goal" type="number" min="1" max="100" placeholder="e.g. 20" />
         </div>
       </div>
-  
-      <div class="panel-body">
-        <input class="form-input" id="panel-goal" type="number" min="0" max="100" placeholder="e.g. 20" />
-        <p class="input-hint">Enter a value between 0 and 100</p>
-      </div>
-  
-      <div class="panel-footer">
-        <!-- ✅ id added so we can hide it during mandatory flow -->
+      <div class="panel-actions">
         <button class="btn btn-secondary" id="goal-panel-cancel-btn"
                 onclick="closePanel('goal-panel-overlay')">Cancel</button>
         <button class="btn btn-primary" onclick="saveGoalPanel()">Save</button>
       </div>
-  
     </div>
   </div>
   
