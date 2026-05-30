@@ -38,208 +38,211 @@
 </div>
 
 <!-- Main App (hidden until logged in) -->
-<div id="app" style="display:none;">
+<div id="app">
+
+  <!-- ══════════════════════════════════════════
+       MAIN
+  ══════════════════════════════════════════ -->
+  <main class="main-content">
+  
+    <!-- ════════ PLAN TAB ════════ -->
+    <div id="tab-planner">
+  
+      <!-- Purpose Banner — session only, always shown on fresh load -->
+      <div class="purpose-banner" id="purpose-banner">
+        <div class="purpose-icon">📋</div>
+        <div class="purpose-text">
+          <div class="purpose-title">What is Budget Coach for?</div>
+          <div class="purpose-desc">
+            This app helps you <strong>plan your spending before your salary arrives</strong>.
+            Each month, enter your expected income, then list your expected needs and wants.
+            The app projects how much you'll save and lets your AI coach flag any issues —
+            <strong>before you spend a single ringgit</strong>.
+            Think of it as a monthly rehearsal for your money. 💡
+          </div>
+        </div>
+        <button class="purpose-dismiss" onclick="dismissBanner()" title="Hide for this session">
+          Got it ✕
+        </button>
+      </div>
+  
+      <!-- Income & Goal -->
+      <div class="card">
+        <div class="income-bar">
+          <div class="income-info">
+            <span class="income-label">Expected Income</span>
+            <span class="income-amount" id="income-display">—</span>
+          </div>
+          <div class="income-actions">
+            <div class="goal-badge" id="goal-badge" style="display:none">
+              🎯 <span id="goal-badge-text">0% goal</span>
+            </div>
+            <button class="icon-btn" title="Edit expected income" onclick="openIncomePanel()">✎</button>
+            <button class="icon-btn" title="Edit savings goal"    onclick="openGoalPanel()">🎯</button>
+          </div>
+        </div>
+        <div class="goal-bar-wrap" id="goal-bar-wrap" style="display:none">
+          <div class="goal-bar-labels">
+            <span>Projected Savings</span>
+            <span id="goal-bar-pct-label">0% of 0%</span>
+          </div>
+          <div class="goal-bar-track">
+            <div class="goal-bar-fill" id="goal-bar-fill" style="width:0%"></div>
+            <div class="goal-marker"   id="goal-marker"   style="left:0%"></div>
+          </div>
+          <div class="goal-status" id="goal-status-text"></div>
+        </div>
+      </div>
+  
+      <!-- Month Navigator -->
+      <div class="card" style="padding:14px 20px">
+        <div class="month-nav">
+          <button class="month-nav-btn" onclick="changeMonth(-1)">‹</button>
+          <span class="month-label" id="month-label">—</span>
+          <button class="month-nav-btn" onclick="changeMonth(1)">›</button>
+        </div>
+      </div>
+  
+      <!-- Summary Strip -->
+      <div class="summary-strip">
+        <div class="summary-tile needs">
+          <span class="label">Expected Needs</span>
+          <span class="value" id="sum-needs">RM 0</span>
+        </div>
+        <div class="summary-tile wants">
+          <span class="label">Expected Wants</span>
+          <span class="value" id="sum-wants">RM 0</span>
+        </div>
+        <div class="summary-tile savings">
+          <span class="label">Projected Savings</span>
+          <span class="value" id="sum-savings">RM 0</span>
+        </div>
+      </div>
+  
+      <!-- Total Expenses Bar -->
+      <div class="total-expenses-card" id="total-expenses-card" style="display:none">
+        <div class="total-expenses-row">
+          <span class="total-expenses-label">📊 Total Expected Expenses</span>
+          <div class="total-expenses-right">
+            <span class="total-expenses-main" id="total-exp-main">RM 0</span>
+            <span class="total-expenses-gross" id="total-exp-gross" style="display:none"></span>
+            <span class="total-expenses-pct safe" id="total-exp-pct">0%</span>
+          </div>
+        </div>
+        <div class="expenses-bar-track">
+          <div class="expenses-bar-fill safe" id="expenses-bar-fill" style="width:0%"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:5px;">
+          <span style="font-size:0.7rem; color:var(--text-muted)" id="total-exp-breakdown"></span>
+          <span style="font-size:0.7rem; color:var(--text-muted)" id="total-exp-income-label"></span>
+        </div>
+      </div>
+  
+      <!-- NEEDS -->
+      <div class="card">
+        <div class="section-header">
+          <div class="section-title">
+            <div class="section-dot need"></div>
+            Expected Needs
+          </div>
+          <span class="section-total" id="needs-total">RM 0</span>
+        </div>
+        <div class="subsection-label">🔁 Recurring</div>
+        <div id="needs-recurring-list"></div>
+        <div class="subsection-label" style="margin-top:12px">📌 One-off</div>
+        <div id="needs-oneoff-list"></div>
+        <button class="add-item-trigger" onclick="toggleAddForm('needs')">+ Add Expected Need</button>
+        <div id="add-form-needs" style="display:none">
+          <div class="add-form" style="margin-top:10px" id="add-form-needs-inner"></div>
+        </div>
+      </div>
+  
+      <!-- WANTS -->
+      <div class="card">
+        <div class="section-header">
+          <div class="section-title">
+            <div class="section-dot want"></div>
+            Expected Wants
+          </div>
+          <span class="section-total" id="wants-total">RM 0</span>
+        </div>
+        <div class="subsection-label">🔁 Recurring</div>
+        <div id="wants-recurring-list"></div>
+        <div class="subsection-label" style="margin-top:12px">📌 One-off</div>
+        <div id="wants-oneoff-list"></div>
+        <button class="add-item-trigger" onclick="toggleAddForm('wants')">+ Add Expected Want</button>
+        <div id="add-form-wants" style="display:none">
+          <div class="add-form" style="margin-top:10px" id="add-form-wants-inner"></div>
+        </div>
+      </div>
+  
+      <!-- AI Review -->
+      <div id="ai-review-card" class="ai-review-card" style="display:none">
+        <div class="card-title">🤖 Coach's Advice</div>
+        <div id="ai-review-content"></div>
+      </div>
+  
+    </div><!-- /tab-planner -->
+  
+    <!-- ════════ RECURRING TAB ════════ -->
+    <div id="tab-recurring" style="display:none">
+      <div class="card">
+        <div class="section-header">
+          <div class="section-title">🔁 Recurring Items</div>
+          <button class="btn btn-primary btn-sm" onclick="openRecurringPanel()">+ Add</button>
+        </div>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:14px;line-height:1.6">
+          These are your default recurring expenses. When adding items in the Plan tab, select
+          <strong style="color:var(--text)">Recurring</strong> type to pick from this list —
+          the amount will auto-fill but you can still edit it. Changing a value here only updates
+          the default; it won't affect amounts already in your monthly plans.
+        </p>
+        <div id="recurring-master-list"></div>
+      </div>
+    </div>
+  
+    <!-- ════════ HISTORY TAB ════════ -->
+    <div id="tab-history" style="display:none">
+      <div class="card">
+        <div class="card-title">📖 Plan History</div>
+        <div id="history-grid" class="history-grid"></div>
+      </div>
+    </div>
+  
+    <!-- ════════ DEFAULTS TAB ════════ -->
+    <div id="tab-defaults" style="display:none">
+      <div class="card">
+        <div class="card-title">⚙️ Default Values</div>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px;line-height:1.6">
+          These defaults are suggested whenever you open a new month with no data. You can always
+          override them per month in the Plan tab.
+        </p>
+        <div class="defaults-row">
+          <div class="defaults-row-info">
+            <span class="defaults-row-label">💰 Default Income</span>
+            <span class="defaults-row-sub">Starting income suggested for new months</span>
+          </div>
+          <span class="defaults-row-value" id="defaults-income-display">Not set</span>
+          <button class="icon-btn" onclick="openDefaultIncomePanel()">✎</button>
+        </div>
+        <div class="defaults-row">
+          <div class="defaults-row-info">
+            <span class="defaults-row-label">🎯 Default Savings Goal</span>
+            <span class="defaults-row-sub">Target savings % suggested for new months</span>
+          </div>
+          <span class="defaults-row-value" id="defaults-goal-display">Not set</span>
+          <button class="icon-btn" onclick="openDefaultGoalPanel()">✎</button>
+        </div>
+      </div>
+    </div>
+  
+  </main>
+  
   <!-- your existing app HTML goes here -->
   <button id="logout-btn">Sign Out</button>
 </div>
   
-<!-- ══════════════════════════════════════════
-     MAIN
-══════════════════════════════════════════ -->
-<main class="main-content">
 
-  <!-- ════════ PLAN TAB ════════ -->
-  <div id="tab-planner">
-
-    <!-- Purpose Banner — session only, always shown on fresh load -->
-    <div class="purpose-banner" id="purpose-banner">
-      <div class="purpose-icon">📋</div>
-      <div class="purpose-text">
-        <div class="purpose-title">What is Budget Coach for?</div>
-        <div class="purpose-desc">
-          This app helps you <strong>plan your spending before your salary arrives</strong>.
-          Each month, enter your expected income, then list your expected needs and wants.
-          The app projects how much you'll save and lets your AI coach flag any issues —
-          <strong>before you spend a single ringgit</strong>.
-          Think of it as a monthly rehearsal for your money. 💡
-        </div>
-      </div>
-      <button class="purpose-dismiss" onclick="dismissBanner()" title="Hide for this session">
-        Got it ✕
-      </button>
-    </div>
-
-    <!-- Income & Goal -->
-    <div class="card">
-      <div class="income-bar">
-        <div class="income-info">
-          <span class="income-label">Expected Income</span>
-          <span class="income-amount" id="income-display">—</span>
-        </div>
-        <div class="income-actions">
-          <div class="goal-badge" id="goal-badge" style="display:none">
-            🎯 <span id="goal-badge-text">0% goal</span>
-          </div>
-          <button class="icon-btn" title="Edit expected income" onclick="openIncomePanel()">✎</button>
-          <button class="icon-btn" title="Edit savings goal"    onclick="openGoalPanel()">🎯</button>
-        </div>
-      </div>
-      <div class="goal-bar-wrap" id="goal-bar-wrap" style="display:none">
-        <div class="goal-bar-labels">
-          <span>Projected Savings</span>
-          <span id="goal-bar-pct-label">0% of 0%</span>
-        </div>
-        <div class="goal-bar-track">
-          <div class="goal-bar-fill" id="goal-bar-fill" style="width:0%"></div>
-          <div class="goal-marker"   id="goal-marker"   style="left:0%"></div>
-        </div>
-        <div class="goal-status" id="goal-status-text"></div>
-      </div>
-    </div>
-
-    <!-- Month Navigator -->
-    <div class="card" style="padding:14px 20px">
-      <div class="month-nav">
-        <button class="month-nav-btn" onclick="changeMonth(-1)">‹</button>
-        <span class="month-label" id="month-label">—</span>
-        <button class="month-nav-btn" onclick="changeMonth(1)">›</button>
-      </div>
-    </div>
-
-    <!-- Summary Strip -->
-    <div class="summary-strip">
-      <div class="summary-tile needs">
-        <span class="label">Expected Needs</span>
-        <span class="value" id="sum-needs">RM 0</span>
-      </div>
-      <div class="summary-tile wants">
-        <span class="label">Expected Wants</span>
-        <span class="value" id="sum-wants">RM 0</span>
-      </div>
-      <div class="summary-tile savings">
-        <span class="label">Projected Savings</span>
-        <span class="value" id="sum-savings">RM 0</span>
-      </div>
-    </div>
-
-    <!-- Total Expenses Bar -->
-    <div class="total-expenses-card" id="total-expenses-card" style="display:none">
-      <div class="total-expenses-row">
-        <span class="total-expenses-label">📊 Total Expected Expenses</span>
-        <div class="total-expenses-right">
-          <span class="total-expenses-main" id="total-exp-main">RM 0</span>
-          <span class="total-expenses-gross" id="total-exp-gross" style="display:none"></span>
-          <span class="total-expenses-pct safe" id="total-exp-pct">0%</span>
-        </div>
-      </div>
-      <div class="expenses-bar-track">
-        <div class="expenses-bar-fill safe" id="expenses-bar-fill" style="width:0%"></div>
-      </div>
-      <div style="display:flex; justify-content:space-between; margin-top:5px;">
-        <span style="font-size:0.7rem; color:var(--text-muted)" id="total-exp-breakdown"></span>
-        <span style="font-size:0.7rem; color:var(--text-muted)" id="total-exp-income-label"></span>
-      </div>
-    </div>
-
-    <!-- NEEDS -->
-    <div class="card">
-      <div class="section-header">
-        <div class="section-title">
-          <div class="section-dot need"></div>
-          Expected Needs
-        </div>
-        <span class="section-total" id="needs-total">RM 0</span>
-      </div>
-      <div class="subsection-label">🔁 Recurring</div>
-      <div id="needs-recurring-list"></div>
-      <div class="subsection-label" style="margin-top:12px">📌 One-off</div>
-      <div id="needs-oneoff-list"></div>
-      <button class="add-item-trigger" onclick="toggleAddForm('needs')">+ Add Expected Need</button>
-      <div id="add-form-needs" style="display:none">
-        <div class="add-form" style="margin-top:10px" id="add-form-needs-inner"></div>
-      </div>
-    </div>
-
-    <!-- WANTS -->
-    <div class="card">
-      <div class="section-header">
-        <div class="section-title">
-          <div class="section-dot want"></div>
-          Expected Wants
-        </div>
-        <span class="section-total" id="wants-total">RM 0</span>
-      </div>
-      <div class="subsection-label">🔁 Recurring</div>
-      <div id="wants-recurring-list"></div>
-      <div class="subsection-label" style="margin-top:12px">📌 One-off</div>
-      <div id="wants-oneoff-list"></div>
-      <button class="add-item-trigger" onclick="toggleAddForm('wants')">+ Add Expected Want</button>
-      <div id="add-form-wants" style="display:none">
-        <div class="add-form" style="margin-top:10px" id="add-form-wants-inner"></div>
-      </div>
-    </div>
-
-    <!-- AI Review -->
-    <div id="ai-review-card" class="ai-review-card" style="display:none">
-      <div class="card-title">🤖 Coach's Advice</div>
-      <div id="ai-review-content"></div>
-    </div>
-
-  </div><!-- /tab-planner -->
-
-  <!-- ════════ RECURRING TAB ════════ -->
-  <div id="tab-recurring" style="display:none">
-    <div class="card">
-      <div class="section-header">
-        <div class="section-title">🔁 Recurring Items</div>
-        <button class="btn btn-primary btn-sm" onclick="openRecurringPanel()">+ Add</button>
-      </div>
-      <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:14px;line-height:1.6">
-        These are your default recurring expenses. When adding items in the Plan tab, select
-        <strong style="color:var(--text)">Recurring</strong> type to pick from this list —
-        the amount will auto-fill but you can still edit it. Changing a value here only updates
-        the default; it won't affect amounts already in your monthly plans.
-      </p>
-      <div id="recurring-master-list"></div>
-    </div>
-  </div>
-
-  <!-- ════════ HISTORY TAB ════════ -->
-  <div id="tab-history" style="display:none">
-    <div class="card">
-      <div class="card-title">📖 Plan History</div>
-      <div id="history-grid" class="history-grid"></div>
-    </div>
-  </div>
-
-  <!-- ════════ DEFAULTS TAB ════════ -->
-  <div id="tab-defaults" style="display:none">
-    <div class="card">
-      <div class="card-title">⚙️ Default Values</div>
-      <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px;line-height:1.6">
-        These defaults are suggested whenever you open a new month with no data. You can always
-        override them per month in the Plan tab.
-      </p>
-      <div class="defaults-row">
-        <div class="defaults-row-info">
-          <span class="defaults-row-label">💰 Default Income</span>
-          <span class="defaults-row-sub">Starting income suggested for new months</span>
-        </div>
-        <span class="defaults-row-value" id="defaults-income-display">Not set</span>
-        <button class="icon-btn" onclick="openDefaultIncomePanel()">✎</button>
-      </div>
-      <div class="defaults-row">
-        <div class="defaults-row-info">
-          <span class="defaults-row-label">🎯 Default Savings Goal</span>
-          <span class="defaults-row-sub">Target savings % suggested for new months</span>
-        </div>
-        <span class="defaults-row-value" id="defaults-goal-display">Not set</span>
-        <button class="icon-btn" onclick="openDefaultGoalPanel()">✎</button>
-      </div>
-    </div>
-  </div>
-
-</main>
 
 <!-- ══════════════════════════════════════════
      COACH ME BUTTON
