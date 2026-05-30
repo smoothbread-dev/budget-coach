@@ -880,7 +880,11 @@ body {
 /* ══════════════════════════════════════════
    MONTH NAV
 ══════════════════════════════════════════ */
-.month-nav { display: flex; align-items: center; gap: 12px; }
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
 .month-nav-btn {
   background: var(--surface2);
@@ -897,7 +901,42 @@ body {
 }
 
 .month-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
-.month-label { font-size: 0.9rem; font-weight: 600; min-width: 110px; text-align: center; }
+
+.month-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 110px;
+  text-align: center;
+}
+
+/* ── Delete Month Button ───────────────── */
+.month-delete-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-left: auto; /* pushes it to the far right */
+  opacity: 0.45;
+  flex-shrink: 0;
+}
+
+.month-delete-btn:hover {
+  opacity: 1;
+  background: rgba(255, 80, 80, 0.12);
+  border-color: rgba(255, 80, 80, 0.4);
+  color: #ff6b6b;
+}
+
+.month-delete-btn.hidden {
+  display: none;
+}
 
 /* ══════════════════════════════════════════
    SAVE TOAST
