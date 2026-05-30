@@ -131,7 +131,7 @@ function showBannerIfNeeded() {
 // ─────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────
-function init() {
+function initApp() {
   const hasData = loadState();
   updateMonthLabel();
 
