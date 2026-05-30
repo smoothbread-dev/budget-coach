@@ -1,6 +1,6 @@
 // supabase.js
-const SUPABASE_URL = 'https://ovjoxowtubkzlbthnigw.supabase.co'
-const SUPABASE_KEY = 'sb_publishable_gp9FtJKT8qIXxIzYqndXMw_IEhOdA3o'
+const SUPABASE_URL = 'SUPABASE_URL_PLACEHOLDER'
+const SUPABASE_KEY = 'SUPABASE_KEY_PLACEHOLDER'
 
 const { createClient } = supabase
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY)
