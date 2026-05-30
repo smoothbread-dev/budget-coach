@@ -22,6 +22,28 @@
   </div>
 </header>
 
+<!-- Auth Modal -->
+<div id="auth-modal" style="display:none;">
+  <div id="auth-box">
+    <h2 id="auth-title">Welcome to Budget Coach</h2>
+    <p id="auth-subtitle">Sign in to sync your data across devices</p>
+
+    <input type="email" id="auth-email" placeholder="Email address" />
+    <input type="password" id="auth-password" placeholder="Password" />
+
+    <button id="auth-submit-btn">Sign In</button>
+    <button id="auth-toggle-btn">Don't have an account? Sign Up</button>
+
+    <p id="auth-error" style="color:red; display:none;"></p>
+  </div>
+</div>
+
+<!-- Main App (hidden until logged in) -->
+<div id="app" style="display:none;">
+  <!-- your existing app HTML goes here -->
+  <button id="logout-btn">Sign Out</button>
+</div>
+  
 <!-- ══════════════════════════════════════════
      MAIN
 ══════════════════════════════════════════ -->
