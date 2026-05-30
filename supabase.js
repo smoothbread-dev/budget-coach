@@ -21,15 +21,34 @@ sb.auth.onAuthStateChange((event, session) => {
 })
 
 // ─── Show/Hide UI ─────────────────────────────────────────
+// ─── Show App (only called after confirmed auth) ───────────
 function showApp() {
   document.getElementById('auth-modal').style.display = 'none'
-  document.getElementById('app').style.display = 'block'
-  console.log('✅ Logged in as:', currentUser.email)
+
+  // Dynamically load your app content only after login
+  const app = document.getElementById('app')
+  app.style.display = 'block'
+
+  // If app content is already loaded, don't reload
+  if (app.dataset.loaded) return
+  app.dataset.loaded = 'true'
+
+  // Dynamically inject your main app HTML
+  app.innerHTML = getAppHTML()
+
+  // Re-initialise your app logic after injecting HTML
+  if (typeof initApp === 'function') initApp()
 }
 
+// ─── Show Auth (clears app content on logout) ─────────────
 function showAuth() {
   document.getElementById('auth-modal').style.display = 'flex'
-  document.getElementById('app').style.display = 'none'
+
+  // Clear app content completely on logout
+  const app = document.getElementById('app')
+  app.style.display = 'none'
+  app.innerHTML = ''
+  delete app.dataset.loaded
 }
 
 // ─── Toggle Sign In / Sign Up ─────────────────────────────
