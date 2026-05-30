@@ -378,6 +378,76 @@ function updateMonthLabel() {
 }
 
 // ─────────────────────────────────────────
+// CONFIRM DELETE MONTH
+// Shows a friendly but firm confirmation
+// before wiping all data for the month.
+// ─────────────────────────────────────────
+function confirmDeleteMonth() {
+  const label = document.getElementById('month-label').textContent.trim();
+
+  // Build a clean confirm dialog using your existing panel system
+  const confirmed = confirm(
+    `⚠️ Delete all data for ${label}?\n\n` +
+    `This will permanently remove:\n` +
+    `  • Expected income\n` +
+    `  • Savings goal\n` +
+    `  • All expected needs & wants\n` +
+    `  • AI review\n\n` +
+    `This cannot be undone.`
+  );
+
+  if (confirmed) deleteCurrentMonth();
+}
+
+// ─────────────────────────────────────────
+// DELETE CURRENT MONTH
+// Deletes the month_plans row from Supabase
+// using user_id + month_key, then resets
+// the local state for that month.
+// ─────────────────────────────────────────
+async function deleteCurrentMonth() {
+  const key = monthKey(currentYear, currentMonth); // e.g. "2026-05"
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) return;
+
+  try {
+    // Show a subtle loading state on the button
+    const btn = document.getElementById('month-delete-btn');
+    if (btn) btn.textContent = '⏳';
+
+    const { error } = await supabase
+      .from('month_plans')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('month_key', key);
+
+    if (error) throw error;
+
+    // ✅ Wipe the local in-memory data for this month
+    delete monthsData[key];
+
+    // ✅ Hide the delete button since month is now empty
+    if (btn) {
+      btn.textContent = '🗑️';
+      btn.classList.add('hidden');
+    }
+
+    // ✅ Re-render — will trigger fresh empty state for this month
+    render();
+
+    console.log(`🗑️ Month ${key} deleted successfully.`);
+
+  } catch (err) {
+    console.error('Failed to delete month:', err);
+    alert('Something went wrong while deleting. Please try again.');
+
+    // Restore button emoji if failed
+    const btn = document.getElementById('month-delete-btn');
+    if (btn) btn.textContent = '🗑️';
+  }
+}
+
+// ─────────────────────────────────────────
 // INCOME PANEL
 // ─────────────────────────────────────────
 function openIncomePanel() {
@@ -819,6 +889,19 @@ function render() {
   const wantsTotal = (data.items||[]).filter(i=>i.category==='wants').reduce((s,i)=>s+i.amount,0);
   document.getElementById('needs-total').textContent = fmt(needsTotal);
   document.getElementById('wants-total').textContent = fmt(wantsTotal);
+
+  // ── Delete button visibility ──────────────
+  const key = monthKey(currentYear, currentMonth);
+  const hasData = monthsData[key] && (
+    monthsData[key].income       !== undefined ||
+    monthsData[key].savingsGoal  !== undefined ||
+    (monthsData[key].items && monthsData[key].items.length > 0)
+  );
+
+  const deleteBtn = document.getElementById('month-delete-btn');
+  if (deleteBtn) {
+    deleteBtn.classList.toggle('hidden', !hasData);
+  }
 }
 
 function renderTotalExpensesBar(needs, wants, funded, gross, expensesPct, income) {
