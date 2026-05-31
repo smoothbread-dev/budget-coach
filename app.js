@@ -1133,11 +1133,14 @@ function handleModalOverlayClick(e) {
 function closePanel(id) { document.getElementById(id).classList.remove('open'); }
 function handlePanelOverlayClick(e, id) {
   const overlay = document.getElementById(id);
-
-  // ✅ If this panel is mandatory, clicking outside does nothing
   if (overlay._mandatory) return;
-
-  if (e.target === overlay) closePanel(id);
+  if (e.target === overlay) {
+    if (id === 'income-panel-overlay') {
+      cancelIncomePanel(); // ✅ handles flow-aware cancel
+    } else {
+      closePanel(id);
+    }
+  }
 }
 
 // ─────────────────────────────────────────
