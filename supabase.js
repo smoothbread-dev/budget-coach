@@ -1,110 +1,141 @@
 // supabase.js
-const SUPABASE_URL = 'SUPABASE_URL_PLACEHOLDER'
-const SUPABASE_KEY = 'SUPABASE_KEY_PLACEHOLDER'
 
-const { createClient } = supabase
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY)
+// ─────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────
+const SUPABASE_URL = 'SUPABASE_URL_PLACEHOLDER';
+const SUPABASE_KEY = 'SUPABASE_KEY_PLACEHOLDER';
 
-// ─── Auth State ───────────────────────────────────────────
-let currentUser = null
-let isSignUp = false
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Check if user is already logged in on page load
+// ─────────────────────────────────────────
+// AUTH STATE
+// ─────────────────────────────────────────
+let currentUser      = null;
+let isSignUp         = false;
+let appInitialised   = false;
+
+/**
+ * Listens for Supabase auth state changes.
+ * Routes to the app on login and back to the auth screen on logout.
+ */
 sb.auth.onAuthStateChange((event, session) => {
   if (session?.user) {
-    currentUser = session.user
-    showApp()
+    currentUser = session.user;
+    showApp();
   } else {
-    currentUser = null
-    showAuth()
+    currentUser = null;
+    showAuth();
   }
-})
+});
 
-// ─── Show/Hide UI ─────────────────────────────────────────
+// ─────────────────────────────────────────
+// SHOW APP
+// ─────────────────────────────────────────
+
+/**
+ * Reveals the main app, injects the app template, and initialises the app.
+ * The appInitialised flag prevents re-initialisation on repeated auth events
+ * (e.g. token refresh), which would wipe in-progress state.
+ */
 function showApp() {
-  document.getElementById('auth-modal').style.display = 'none'
+  document.getElementById('auth-modal').style.display = 'none';
 
-  const app = document.getElementById('app')
-  app.style.display = 'block'
+  const app = document.getElementById('app');
+  app.style.display = 'block';
 
-  if (app.dataset.loaded) return
-  app.dataset.loaded = 'true'
+  if (appInitialised) return;
+  appInitialised = true;
 
-  const template = document.getElementById('app-template')
-  app.appendChild(template.content.cloneNode(true))
+  const template = document.getElementById('app-template');
+  app.appendChild(template.content.cloneNode(true));
 
-  if (typeof initApp === 'function') initApp()
+  if (typeof initApp === 'function') initApp();
 }
 
-// ─── Show Auth (clears app content on logout) ─────────────
+// ─────────────────────────────────────────
+// SHOW AUTH
+// ─────────────────────────────────────────
+
+/**
+ * Reveals the auth screen and fully resets its state.
+ * Clears the app content so no previous user's data remains in the DOM.
+ */
 function showAuth() {
-  document.getElementById('auth-modal').style.display = 'flex'
+  document.getElementById('auth-modal').style.display = 'flex';
 
-  // ✅ Clear auth fields so previous user's credentials are never shown
-  document.getElementById('auth-email').value    = ''
-  document.getElementById('auth-password').value = ''
+  document.getElementById('auth-email').value    = '';
+  document.getElementById('auth-password').value = '';
 
-  // ✅ Reset toggle state back to Sign In every time auth screen appears
-  isSignUp = false
-  document.getElementById('auth-title').textContent      = 'Welcome Back'
-  document.getElementById('auth-submit-btn').textContent  = 'Sign In'
-  document.getElementById('auth-toggle-btn').textContent  = "Don't have an account? Sign Up"
-  document.getElementById('auth-error').style.display     = 'none'
+  isSignUp = false;
+  document.getElementById('auth-title').textContent     = 'Welcome Back';
+  document.getElementById('auth-submit-btn').textContent = 'Sign In';
+  document.getElementById('auth-toggle-btn').textContent = "Don't have an account? Sign Up";
+  document.getElementById('auth-error').style.display   = 'none';
 
-  // Clear app content completely on logout
-  const app = document.getElementById('app')
-  app.style.display = 'none'
-  app.innerHTML = ''
-  delete app.dataset.loaded
+  const app = document.getElementById('app');
+  app.style.display = 'none';
+  app.innerHTML     = '';
+  appInitialised    = false;
 }
 
-// ─── Toggle Sign In / Sign Up ─────────────────────────────
+// ─────────────────────────────────────────
+// AUTH TOGGLE
+// ─────────────────────────────────────────
+
+/** Toggles the auth form between Sign In and Sign Up mode, clearing fields on each switch. */
 document.getElementById('auth-toggle-btn').addEventListener('click', () => {
-  isSignUp = !isSignUp
-  document.getElementById('auth-title').textContent      = isSignUp ? 'Create Your Account' : 'Welcome Back'
-  document.getElementById('auth-submit-btn').textContent  = isSignUp ? 'Sign Up' : 'Sign In'
-  document.getElementById('auth-toggle-btn').textContent  = isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"
-  document.getElementById('auth-error').style.display     = 'none'
+  isSignUp = !isSignUp;
 
-  // ✅ Clear fields on every toggle
-  document.getElementById('auth-email').value    = ''
-  document.getElementById('auth-password').value = ''
-})
+  document.getElementById('auth-title').textContent     = isSignUp ? 'Create Your Account' : 'Welcome Back';
+  document.getElementById('auth-submit-btn').textContent = isSignUp ? 'Sign Up' : 'Sign In';
+  document.getElementById('auth-toggle-btn').textContent = isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up";
+  document.getElementById('auth-error').style.display   = 'none';
 
-// ─── Sign In / Sign Up Handler ────────────────────────────
+  document.getElementById('auth-email').value    = '';
+  document.getElementById('auth-password').value = '';
+});
+
+// ─────────────────────────────────────────
+// AUTH SUBMIT
+// ─────────────────────────────────────────
+
+/** Handles Sign In and Sign Up form submission. Auth state changes are handled by onAuthStateChange. */
 document.getElementById('auth-submit-btn').addEventListener('click', async () => {
-  const email    = document.getElementById('auth-email').value.trim()
-  const password = document.getElementById('auth-password').value.trim()
-  const errorEl  = document.getElementById('auth-error')
+  const email    = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value.trim();
+  const errorEl  = document.getElementById('auth-error');
 
   if (!email || !password) {
-    errorEl.textContent    = 'Please enter both email and password.'
-    errorEl.style.display  = 'block'
-    return
+    errorEl.textContent   = 'Please enter both email and password.';
+    errorEl.style.display = 'block';
+    return;
   }
 
-  let result
-
-  if (isSignUp) {
-    result = await sb.auth.signUp({ email, password })
-  } else {
-    result = await sb.auth.signInWithPassword({ email, password })
-  }
+  const result = isSignUp
+    ? await sb.auth.signUp({ email, password })
+    : await sb.auth.signInWithPassword({ email, password });
 
   if (result.error) {
-    errorEl.textContent   = result.error.message
-    errorEl.style.display = 'block'
+    errorEl.textContent   = result.error.message;
+    errorEl.style.display = 'block';
   } else {
-    errorEl.style.display = 'none'
+    errorEl.style.display = 'none';
   }
-  // onAuthStateChange handles the rest automatically ✅
-})
+});
 
-// ─── Sign Out ─────────────────────────────────────────────
+// ─────────────────────────────────────────
+// SIGN OUT
+// ─────────────────────────────────────────
+
+/**
+ * Listens for logout button clicks via event delegation on the document.
+ * Delegation is used because the logout button is injected dynamically
+ * from the app template and does not exist in the DOM at script load time.
+ */
 document.addEventListener('click', async (e) => {
   if (e.target.id === 'logout-btn') {
-    await sb.auth.signOut()
-    // ✅ showAuth() is triggered automatically via onAuthStateChange,
-    // which now handles field clearing and state reset ✅
+    await sb.auth.signOut();
   }
-})
+});
