@@ -2,30 +2,33 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Budget Coach</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-
-<!-- Auth Modal -->
+<!-- ══════════════════════════════════════════
+     AUTH MODAL
+══════════════════════════════════════════ -->
 <div id="auth-modal">
   <div id="auth-box">
     <h2 id="auth-title">Welcome to Budget Coach</h2>
     <p id="auth-subtitle">Sign in to sync your data across devices</p>
 
-    <input type="email" id="auth-email" placeholder="Email address" />
+    <input type="email"    id="auth-email"    placeholder="Email address" />
     <input type="password" id="auth-password" placeholder="Password" />
 
     <button id="auth-submit-btn">Sign In</button>
     <button id="auth-toggle-btn">Don't have an account? Sign Up</button>
 
-    <p id="auth-error" style="color:red; display:none;"></p>
+    <p id="auth-error" class="bc-hidden" style="color:red"></p>
   </div>
 </div>
 
-<!-- Main App (hidden until logged in) -->
+<!-- ══════════════════════════════════════════
+     MAIN APP (hidden until logged in)
+══════════════════════════════════════════ -->
 <div id="app"></div>
 
 <template id="app-template">
@@ -34,32 +37,32 @@
        HEADER
   ══════════════════════════════════════════ -->
   <header class="app-header">
-  
+
     <div class="app-logo">
       <span>🪙</span>
       <span>Budget Coach</span>
     </div>
-  
+
     <nav class="nav-tabs">
       <button class="nav-tab-btn active" id="tab-btn-planner"   onclick="switchTab('planner')">Plan</button>
       <button class="nav-tab-btn"        id="tab-btn-recurring" onclick="switchTab('recurring')">Recurring</button>
       <button class="nav-tab-btn"        id="tab-btn-history"   onclick="switchTab('history')">History</button>
       <button class="nav-tab-btn"        id="tab-btn-defaults"  onclick="switchTab('defaults')">Defaults</button>
     </nav>
-  
+
     <button class="btn btn-secondary signout-btn" id="logout-btn">Sign Out</button>
-  
+
   </header>
-  
+
   <!-- ══════════════════════════════════════════
        MAIN
   ══════════════════════════════════════════ -->
   <main class="main-content">
-  
+
     <!-- ════════ PLAN TAB ════════ -->
     <div id="tab-planner">
-  
-      <!-- Purpose Banner — session only, always shown on fresh load -->
+
+      <!-- Purpose Banner -->
       <div class="purpose-banner" id="purpose-banner">
         <div class="purpose-icon">📋</div>
         <div class="purpose-text">
@@ -76,7 +79,7 @@
           Got it ✕
         </button>
       </div>
-  
+
       <!-- Income & Goal -->
       <div class="card">
         <div class="income-bar">
@@ -85,14 +88,14 @@
             <span class="income-amount" id="income-display">—</span>
           </div>
           <div class="income-actions">
-            <div class="goal-badge" id="goal-badge" style="display:none">
+            <div class="goal-badge bc-hidden" id="goal-badge">
               🎯 <span id="goal-badge-text">0% goal</span>
             </div>
             <button class="icon-btn" title="Edit expected income" onclick="openIncomePanel()">✎</button>
             <button class="icon-btn" title="Edit savings goal"    onclick="openGoalPanel()">🎯</button>
           </div>
         </div>
-        <div class="goal-bar-wrap" id="goal-bar-wrap" style="display:none">
+        <div class="goal-bar-wrap bc-hidden" id="goal-bar-wrap">
           <div class="goal-bar-labels">
             <span>Projected Savings</span>
             <span id="goal-bar-pct-label">0% of 0%</span>
@@ -104,23 +107,20 @@
           <div class="goal-status" id="goal-status-text"></div>
         </div>
       </div>
-  
+
       <!-- Month Navigator -->
-      <div class="card" style="padding:14px 20px">
+      <div class="card bc-p-month-nav">
         <div class="month-nav">
           <button class="month-nav-btn" onclick="changeMonth(-1)">‹</button>
           <span class="month-label" id="month-label">—</span>
           <button class="month-nav-btn" onclick="changeMonth(1)">›</button>
-      
-          <!-- 🗑️ Delete Month Button -->
-          <button class="month-delete-btn" id="month-delete-btn"
+          <button class="month-delete-btn hidden" id="month-delete-btn"
                   onclick="confirmDeleteMonth()" title="Delete all data for this month">
             🗑️
           </button>
-      
         </div>
       </div>
-  
+
       <!-- Summary Strip -->
       <div class="summary-strip">
         <div class="summary-tile needs">
@@ -136,26 +136,26 @@
           <span class="value" id="sum-savings">RM 0</span>
         </div>
       </div>
-  
+
       <!-- Total Expenses Bar -->
-      <div class="total-expenses-card" id="total-expenses-card" style="display:none">
+      <div class="total-expenses-card bc-hidden" id="total-expenses-card">
         <div class="total-expenses-row">
           <span class="total-expenses-label">📊 Total Expected Expenses</span>
           <div class="total-expenses-right">
             <span class="total-expenses-main" id="total-exp-main">RM 0</span>
-            <span class="total-expenses-gross" id="total-exp-gross" style="display:none"></span>
+            <span class="total-expenses-gross bc-hidden" id="total-exp-gross"></span>
             <span class="total-expenses-pct safe" id="total-exp-pct">0%</span>
           </div>
         </div>
         <div class="expenses-bar-track">
           <div class="expenses-bar-fill safe" id="expenses-bar-fill" style="width:0%"></div>
         </div>
-        <div style="display:flex; justify-content:space-between; margin-top:5px;">
-          <span style="font-size:0.7rem; color:var(--text-muted)" id="total-exp-breakdown"></span>
-          <span style="font-size:0.7rem; color:var(--text-muted)" id="total-exp-income-label"></span>
+        <div class="bc-exp-footer">
+          <span class="bc-exp-footer-text" id="total-exp-breakdown"></span>
+          <span class="bc-exp-footer-text" id="total-exp-income-label"></span>
         </div>
       </div>
-  
+
       <!-- NEEDS -->
       <div class="card">
         <div class="section-header">
@@ -167,14 +167,14 @@
         </div>
         <div class="subsection-label">🔁 Recurring</div>
         <div id="needs-recurring-list"></div>
-        <div class="subsection-label" style="margin-top:12px">📌 One-off</div>
+        <div class="subsection-label bc-mt-12">📌 One-off</div>
         <div id="needs-oneoff-list"></div>
         <button class="add-item-trigger" onclick="toggleAddForm('needs')">+ Add Expected Need</button>
-        <div id="add-form-needs" style="display:none">
-          <div class="add-form" style="margin-top:10px" id="add-form-needs-inner"></div>
+        <div id="add-form-needs" class="bc-hidden">
+          <div class="add-form bc-mt-10" id="add-form-needs-inner"></div>
         </div>
       </div>
-  
+
       <!-- WANTS -->
       <div class="card">
         <div class="section-header">
@@ -186,30 +186,30 @@
         </div>
         <div class="subsection-label">🔁 Recurring</div>
         <div id="wants-recurring-list"></div>
-        <div class="subsection-label" style="margin-top:12px">📌 One-off</div>
+        <div class="subsection-label bc-mt-12">📌 One-off</div>
         <div id="wants-oneoff-list"></div>
         <button class="add-item-trigger" onclick="toggleAddForm('wants')">+ Add Expected Want</button>
-        <div id="add-form-wants" style="display:none">
-          <div class="add-form" style="margin-top:10px" id="add-form-wants-inner"></div>
+        <div id="add-form-wants" class="bc-hidden">
+          <div class="add-form bc-mt-10" id="add-form-wants-inner"></div>
         </div>
       </div>
-  
+
       <!-- AI Review -->
-      <div id="ai-review-card" class="ai-review-card" style="display:none">
+      <div id="ai-review-card" class="ai-review-card bc-hidden">
         <div class="card-title">🤖 Coach's Advice</div>
         <div id="ai-review-content"></div>
       </div>
-  
+
     </div><!-- /tab-planner -->
-  
+
     <!-- ════════ RECURRING TAB ════════ -->
-    <div id="tab-recurring" style="display:none">
+    <div id="tab-recurring" class="bc-hidden">
       <div class="card">
         <div class="section-header">
           <div class="section-title">🔁 Recurring Items</div>
           <button class="btn btn-primary btn-sm" onclick="openRecurringPanel()">+ Add</button>
         </div>
-        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:14px;line-height:1.6">
+        <p class="bc-tab-description">
           These are your default recurring expenses. When adding items in the Plan tab, select
           <strong style="color:var(--text)">Recurring</strong> type to pick from this list —
           the amount will auto-fill but you can still edit it. Changing a value here only updates
@@ -218,20 +218,20 @@
         <div id="recurring-master-list"></div>
       </div>
     </div>
-  
+
     <!-- ════════ HISTORY TAB ════════ -->
-    <div id="tab-history" style="display:none">
+    <div id="tab-history" class="bc-hidden">
       <div class="card">
         <div class="card-title">📖 Plan History</div>
         <div id="history-grid" class="history-grid"></div>
       </div>
     </div>
-  
+
     <!-- ════════ DEFAULTS TAB ════════ -->
-    <div id="tab-defaults" style="display:none">
+    <div id="tab-defaults" class="bc-hidden">
       <div class="card">
         <div class="card-title">⚙️ Default Values</div>
-        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px;line-height:1.6">
+        <p class="bc-tab-description">
           These defaults are suggested whenever you open a new month with no data. You can always
           override them per month in the Plan tab.
         </p>
@@ -253,7 +253,7 @@
         </div>
       </div>
     </div>
-  
+
   </main>
 
   <!-- ══════════════════════════════════════════
@@ -264,7 +264,7 @@
       ✨ Coach Me — Analyse My Plan
     </button>
   </div>
-  
+
   <!-- ══════════════════════════════════════════
        SAVE TOAST
   ══════════════════════════════════════════ -->
@@ -272,7 +272,7 @@
     <div class="spinner" id="toast-spinner"></div>
     <span id="toast-label">Saving…</span>
   </div>
-  
+
   <!-- ══════════════════════════════════════════
        FIRST-TIME SETUP PANEL
   ══════════════════════════════════════════ -->
@@ -301,7 +301,7 @@
       </div>
     </div>
   </div>
-  
+
   <!-- ══════════════════════════════════════════
        USE DEFAULTS PROMPT
   ══════════════════════════════════════════ -->
@@ -319,11 +319,12 @@
       </div>
     </div>
   </div>
-  
+
   <!-- ══════════════════════════════════════════
        INCOME PANEL
   ══════════════════════════════════════════ -->
-  <div class="panel-overlay" id="income-panel-overlay" onclick="handlePanelOverlayClick(event,'income-panel-overlay')">
+  <div class="panel-overlay" id="income-panel-overlay"
+       onclick="handlePanelOverlayClick(event, 'income-panel-overlay')">
     <div class="panel-box">
       <div class="panel-title">Expected Income 💰</div>
       <div class="panel-subtitle">Enter your expected take-home income for this month.</div>
@@ -335,16 +336,17 @@
         </div>
       </div>
       <div class="panel-actions">
-        <button class="btn btn-secondary" onclick="cancelIncomePanel()">Cancel</button> <!-- ✅ changed -->
+        <button class="btn btn-secondary" onclick="cancelIncomePanel()">Cancel</button>
         <button class="btn btn-primary"   onclick="saveIncomePanel()">Save</button>
       </div>
     </div>
   </div>
-  
+
   <!-- ══════════════════════════════════════════
        SAVINGS GOAL PANEL
   ══════════════════════════════════════════ -->
-  <div class="panel-overlay" id="goal-panel-overlay" onclick="handlePanelOverlayClick(event, 'goal-panel-overlay')">
+  <div class="panel-overlay" id="goal-panel-overlay"
+       onclick="handlePanelOverlayClick(event, 'goal-panel-overlay')">
     <div class="panel-box">
       <div class="panel-title" id="goal-panel-title">Savings Goal 🎯</div>
       <div class="panel-subtitle" id="goal-panel-subtitle">What % of income do you want to save this month?</div>
@@ -358,15 +360,16 @@
       <div class="panel-actions">
         <button class="btn btn-secondary" id="goal-panel-cancel-btn"
                 onclick="closePanel('goal-panel-overlay')">Cancel</button>
-        <button class="btn btn-primary" onclick="saveGoalPanel()">Save</button>
+        <button class="btn btn-primary"   onclick="saveGoalPanel()">Save</button>
       </div>
     </div>
   </div>
-  
+
   <!-- ══════════════════════════════════════════
        DEFAULT INCOME PANEL
   ══════════════════════════════════════════ -->
-  <div class="panel-overlay" id="default-income-panel-overlay" onclick="handlePanelOverlayClick(event,'default-income-panel-overlay')">
+  <div class="panel-overlay" id="default-income-panel-overlay"
+       onclick="handlePanelOverlayClick(event, 'default-income-panel-overlay')">
     <div class="panel-box">
       <div class="panel-title">Default Income 💰</div>
       <div class="panel-subtitle">Suggested whenever you open a new month with no income set.</div>
@@ -383,11 +386,12 @@
       </div>
     </div>
   </div>
-  
+
   <!-- ══════════════════════════════════════════
        DEFAULT GOAL PANEL
   ══════════════════════════════════════════ -->
-  <div class="panel-overlay" id="default-goal-panel-overlay" onclick="handlePanelOverlayClick(event,'default-goal-panel-overlay')">
+  <div class="panel-overlay" id="default-goal-panel-overlay"
+       onclick="handlePanelOverlayClick(event, 'default-goal-panel-overlay')">
     <div class="panel-box">
       <div class="panel-title">Default Savings Goal 🎯</div>
       <div class="panel-subtitle">Suggested whenever you open a new month with no savings goal set.</div>
@@ -401,11 +405,12 @@
       </div>
     </div>
   </div>
-  
+
   <!-- ══════════════════════════════════════════
        RECURRING ITEM PANEL
   ══════════════════════════════════════════ -->
-  <div class="panel-overlay" id="recurring-panel-overlay" onclick="handlePanelOverlayClick(event,'recurring-panel-overlay')">
+  <div class="panel-overlay" id="recurring-panel-overlay"
+       onclick="handlePanelOverlayClick(event, 'recurring-panel-overlay')">
     <div class="panel-box">
       <div class="panel-title" id="recurring-panel-title">Add Recurring Item</div>
       <div class="panel-subtitle">This item will appear in the dropdown when adding recurring expenses to any month's plan.</div>
@@ -426,11 +431,12 @@
       </div>
     </div>
   </div>
-  
+
   <!-- ══════════════════════════════════════════
        EDIT PLAN ITEM PANEL
   ══════════════════════════════════════════ -->
-  <div class="panel-overlay" id="edit-item-panel-overlay" onclick="handlePanelOverlayClick(event,'edit-item-panel-overlay')">
+  <div class="panel-overlay" id="edit-item-panel-overlay"
+       onclick="handlePanelOverlayClick(event, 'edit-item-panel-overlay')">
     <div class="panel-box">
       <div class="panel-title">Edit Item ✏️</div>
       <div class="panel-subtitle">Update this item's details.</div>
@@ -460,7 +466,7 @@
           <option value="oneoff">One-off</option>
         </select>
       </div>
-      <div id="edit-funded-wrap" style="display:none; margin-bottom:14px">
+      <div id="edit-funded-wrap" class="bc-hidden bc-mb-14">
         <label class="funded-check-wrap">
           <input type="checkbox" id="edit-item-funded" />
           <span class="funded-check-label">💰 Funded from saved-up money (won't affect projected savings)</span>
@@ -472,7 +478,7 @@
       </div>
     </div>
   </div>
-  
+
   <!-- ══════════════════════════════════════════
        HISTORY DETAIL MODAL
   ══════════════════════════════════════════ -->
@@ -485,16 +491,17 @@
       <div id="modal-body"></div>
     </div>
   </div>
-  
+
 </template>
 
-<!-- 1. Supabase SDK first -->
+<!-- 1. Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- 2. Your Supabase config + auth -->
+<!-- 2. Supabase config + auth -->
 <script src="supabase.js"></script>
 
-<!-- 3. Your existing app logic last -->
+<!-- 3. App logic -->
 <script src="app.js"></script>
+
 </body>
 </html>
