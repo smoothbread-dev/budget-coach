@@ -341,7 +341,13 @@ function applyDefaults() {
 
 function enterOwnValues() {
   document.getElementById('defaults-prompt-overlay').classList.remove('open');
-  openIncomePanel();
+
+  // ✅ Mark the income panel as opened from the new-month flow
+  document.getElementById('panel-income').value = '';
+  const overlay = document.getElementById('income-panel-overlay');
+  overlay._fromNewMonthFlow = true;
+  overlay.classList.add('open');
+  setTimeout(() => document.getElementById('panel-income').focus(), 100);
 }
 
 // ─────────────────────────────────────────
@@ -463,7 +469,9 @@ async function deleteCurrentMonth() {
 // ─────────────────────────────────────────
 function openIncomePanel() {
   document.getElementById('panel-income').value = currentMonthData().income || '';
-  document.getElementById('income-panel-overlay').classList.add('open');
+  const overlay = document.getElementById('income-panel-overlay');
+  overlay._fromNewMonthFlow = false; // ✅ normal edit — cancel just closes
+  overlay.classList.add('open');
   setTimeout(() => document.getElementById('panel-income').focus(), 100);
 }
 
@@ -485,6 +493,18 @@ function saveIncomePanel() {
     render();
     triggerSave();
   }
+}
+
+function cancelIncomePanel() {
+  const overlay = document.getElementById('income-panel-overlay');
+  closePanel('income-panel-overlay');
+
+  if (overlay._fromNewMonthFlow) {
+    // ✅ User came from "enter my own values" — send them back to the prompt
+    overlay._fromNewMonthFlow = false;
+    checkAndPromptMonth();
+  }
+  // else: normal edit cancel — do nothing extra ✅
 }
 
 // ─────────────────────────────────────────
