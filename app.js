@@ -727,7 +727,14 @@ async function deleteRecurringItem(id) {
   renderRecurringMasterList();
 }
 
-/** Renders the full recurring master list into the recurring tab. */
+/**
+ * Renders the full recurring master list into the recurring tab.
+ *
+ * FIX: item.id is a Supabase UUID/integer — it must be quoted in the onclick
+ * attribute string so the browser parses it as a JS string argument, not a
+ * bare identifier. Without quotes, onclick="openRecurringPanel(abc-123)" is
+ * invalid JS and the click handler silently does nothing.
+ */
 function renderRecurringMasterList() {
   const el = document.getElementById('recurring-master-list');
 
@@ -741,8 +748,8 @@ function renderRecurringMasterList() {
       <span class="recurring-item-name">${escHtml(item.name)}</span>
       <span class="recurring-item-amount">${fmt(item.amount)}</span>
       <div class="item-actions">
-        <button class="item-action-btn edit" onclick="openRecurringPanel(${item.id})" title="Edit">✎</button>
-        <button class="item-action-btn del"  onclick="deleteRecurringItem(${item.id})" title="Delete">✕</button>
+        <button class="item-action-btn edit" onclick="openRecurringPanel('${item.id}')" title="Edit">✎</button>
+        <button class="item-action-btn del"  onclick="deleteRecurringItem('${item.id}')" title="Delete">✕</button>
       </div>
     </div>
   `).join('');
@@ -963,7 +970,14 @@ function calcTotals() {
 // RENDER — PLAN TAB
 // ─────────────────────────────────────────
 
-/** Builds an HTML string for a single plan item row, used by renderItemList. */
+/**
+ * Builds an HTML string for a single plan item row, used by renderItemList.
+ *
+ * FIX: item.id is a UUID string — it must be wrapped in single quotes inside
+ * the onclick attribute so the browser parses it as a JS string argument.
+ * Without quotes, onclick="openEditItemPanel(550e8400-e29b-...)" is invalid
+ * JS (the hyphens are parsed as subtraction) and the handler silently fails.
+ */
 function buildItemRowHTML(item) {
   return `
     <div class="item-row">
