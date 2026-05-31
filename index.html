@@ -22,6 +22,11 @@
     <button id="auth-submit-btn">Sign In</button>
     <button id="auth-toggle-btn">Don't have an account? Sign Up</button>
 
+    <!--
+      bc-hidden is safe here: supabase.js controls this via
+      errorEl.style.display = 'block' / 'none' — inline style
+      always beats the class, so this is fine.
+    -->
     <p id="auth-error" class="bc-hidden" style="color:red"></p>
   </div>
 </div>
@@ -88,14 +93,20 @@
             <span class="income-amount" id="income-display">—</span>
           </div>
           <div class="income-actions">
-            <div class="goal-badge bc-hidden" id="goal-badge">
+            <!--
+              JS-controlled: app.js sets style.display directly.
+              Must use inline style="display:none" so JS can override it
+              with style.display = 'flex' / 'block' without class conflict.
+            -->
+            <div class="goal-badge" id="goal-badge" style="display:none">
               🎯 <span id="goal-badge-text">0% goal</span>
             </div>
             <button class="icon-btn" title="Edit expected income" onclick="openIncomePanel()">✎</button>
             <button class="icon-btn" title="Edit savings goal"    onclick="openGoalPanel()">🎯</button>
           </div>
         </div>
-        <div class="goal-bar-wrap bc-hidden" id="goal-bar-wrap">
+        <!-- JS-controlled: must stay as inline style -->
+        <div class="goal-bar-wrap" id="goal-bar-wrap" style="display:none">
           <div class="goal-bar-labels">
             <span>Projected Savings</span>
             <span id="goal-bar-pct-label">0% of 0%</span>
@@ -114,6 +125,7 @@
           <button class="month-nav-btn" onclick="changeMonth(-1)">‹</button>
           <span class="month-label" id="month-label">—</span>
           <button class="month-nav-btn" onclick="changeMonth(1)">›</button>
+          <!-- JS adds/removes .hidden class — keep as-is -->
           <button class="month-delete-btn hidden" id="month-delete-btn"
                   onclick="confirmDeleteMonth()" title="Delete all data for this month">
             🗑️
@@ -137,13 +149,14 @@
         </div>
       </div>
 
-      <!-- Total Expenses Bar -->
-      <div class="total-expenses-card bc-hidden" id="total-expenses-card">
+      <!-- Total Expenses Bar — JS-controlled -->
+      <div class="total-expenses-card" id="total-expenses-card" style="display:none">
         <div class="total-expenses-row">
           <span class="total-expenses-label">📊 Total Expected Expenses</span>
           <div class="total-expenses-right">
             <span class="total-expenses-main" id="total-exp-main">RM 0</span>
-            <span class="total-expenses-gross bc-hidden" id="total-exp-gross"></span>
+            <!-- JS-controlled -->
+            <span class="total-expenses-gross" id="total-exp-gross" style="display:none"></span>
             <span class="total-expenses-pct safe" id="total-exp-pct">0%</span>
           </div>
         </div>
@@ -170,7 +183,8 @@
         <div class="subsection-label bc-mt-12">📌 One-off</div>
         <div id="needs-oneoff-list"></div>
         <button class="add-item-trigger" onclick="toggleAddForm('needs')">+ Add Expected Need</button>
-        <div id="add-form-needs" class="bc-hidden">
+        <!-- JS-controlled -->
+        <div id="add-form-needs" style="display:none">
           <div class="add-form bc-mt-10" id="add-form-needs-inner"></div>
         </div>
       </div>
@@ -189,21 +203,22 @@
         <div class="subsection-label bc-mt-12">📌 One-off</div>
         <div id="wants-oneoff-list"></div>
         <button class="add-item-trigger" onclick="toggleAddForm('wants')">+ Add Expected Want</button>
-        <div id="add-form-wants" class="bc-hidden">
+        <!-- JS-controlled -->
+        <div id="add-form-wants" style="display:none">
           <div class="add-form bc-mt-10" id="add-form-wants-inner"></div>
         </div>
       </div>
 
-      <!-- AI Review -->
-      <div id="ai-review-card" class="ai-review-card bc-hidden">
+      <!-- AI Review — JS-controlled -->
+      <div id="ai-review-card" class="ai-review-card" style="display:none">
         <div class="card-title">🤖 Coach's Advice</div>
         <div id="ai-review-content"></div>
       </div>
 
     </div><!-- /tab-planner -->
 
-    <!-- ════════ RECURRING TAB ════════ -->
-    <div id="tab-recurring" class="bc-hidden">
+    <!-- ════════ RECURRING TAB — JS-controlled via switchTab() ════════ -->
+    <div id="tab-recurring" style="display:none">
       <div class="card">
         <div class="section-header">
           <div class="section-title">🔁 Recurring Items</div>
@@ -219,16 +234,16 @@
       </div>
     </div>
 
-    <!-- ════════ HISTORY TAB ════════ -->
-    <div id="tab-history" class="bc-hidden">
+    <!-- ════════ HISTORY TAB — JS-controlled via switchTab() ════════ -->
+    <div id="tab-history" style="display:none">
       <div class="card">
         <div class="card-title">📖 Plan History</div>
         <div id="history-grid" class="history-grid"></div>
       </div>
     </div>
 
-    <!-- ════════ DEFAULTS TAB ════════ -->
-    <div id="tab-defaults" class="bc-hidden">
+    <!-- ════════ DEFAULTS TAB — JS-controlled via switchTab() ════════ -->
+    <div id="tab-defaults" style="display:none">
       <div class="card">
         <div class="card-title">⚙️ Default Values</div>
         <p class="bc-tab-description">
@@ -466,7 +481,8 @@
           <option value="oneoff">One-off</option>
         </select>
       </div>
-      <div id="edit-funded-wrap" class="bc-hidden bc-mb-14">
+      <!-- JS-controlled -->
+      <div id="edit-funded-wrap" style="display:none; margin-bottom:14px">
         <label class="funded-check-wrap">
           <input type="checkbox" id="edit-item-funded" />
           <span class="funded-check-label">💰 Funded from saved-up money (won't affect projected savings)</span>
