@@ -199,10 +199,13 @@ document.addEventListener('click', async (e) => {
 document.addEventListener('DOMContentLoaded', () => {
 
   /** Toggles the dropdown open/closed */
-  document.getElementById('user-avatar-btn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    document.getElementById('user-menu').classList.toggle('open');
-  });
+  const avatarBtn = document.getElementById('user-avatar-btn');
+  if (avatarBtn) {
+    avatarBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('user-menu')?.classList.toggle('open');
+    });
+  }
 
   /** Closes the dropdown when clicking anywhere outside */
   document.addEventListener('click', () => {
