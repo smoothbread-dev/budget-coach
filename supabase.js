@@ -23,8 +23,9 @@ let appInitialised   = false;
 sb.auth.onAuthStateChange((event, session) => {
   if (session?.user) {
     currentUser = session.user;
-    setUserAvatar(currentUser.email);
     showApp();
+    initUserMenu();
+    setUserAvatar(currentUser.email);
   } else {
     currentUser = null;
     clearUserAvatar();
@@ -54,6 +55,20 @@ function showApp() {
   app.appendChild(template.content.cloneNode(true));
 
   if (typeof initApp === 'function') initApp();
+}
+
+/** Call this once after showApp() renders the header */
+function initUserMenu() {
+  const avatarBtn = document.getElementById('user-avatar-btn');
+  if (!avatarBtn) return;
+
+  // Remove old listener to avoid duplicates on re-login
+  avatarBtn.replaceWith(avatarBtn.cloneNode(true));
+
+  document.getElementById('user-avatar-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('user-menu')?.classList.toggle('open');
+  });
 }
 
 // ─────────────────────────────────────────
