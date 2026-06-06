@@ -21,6 +21,8 @@ let appInitialised   = false;
  * Routes to the app on login and back to the auth screen on logout.
  */
 sb.auth.onAuthStateChange((event, session) => {
+  console.log('Auth event:', event, '| User:', session?.user?.email);
+  
   if (session?.user) {
     currentUser = session.user;
     showApp();
