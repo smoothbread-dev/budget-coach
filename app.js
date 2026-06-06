@@ -851,7 +851,7 @@ function handleTypeChange(cat) {
 /** Auto-fills the item name and amount fields from the selected recurring item. */
 function fillFromRecurring(cat) {
   const sel  = document.getElementById(`${cat}-recurring-select`);
-  const id   = sel.value;
+  const id   = Number(sel.value);
   if (!id) return;
   const item = state.recurringItems.find(r => r.id === id);
   if (!item) return;
