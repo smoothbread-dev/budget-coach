@@ -58,6 +58,8 @@ function showToast(status) {
 
 /** Resets state and loads all user data from Supabase. Called once on login. */
 async function loadFromSupabase() {
+  console.log('loadFromSupabase called | currentUser:', currentUser?.email);
+  
   state = {
     defaults:       { income: 0, savingsGoal: 0 },
     recurringItems: [],
@@ -295,7 +297,11 @@ async function initApp() {
   showToast('saving');
   document.getElementById('toast-label').textContent = 'Loading…';
 
+  console.log('initApp called | currentUser:', currentUser?.email);  // 👈
+  
   await loadFromSupabase();
+  
+  console.log('loadFromSupabase done | state:', JSON.stringify(state)); // 👈
 
   showToast('saved');
   document.getElementById('toast-label').textContent = '✓ Ready';
@@ -303,6 +309,7 @@ async function initApp() {
   updateMonthLabel();
 
   const hasDefaults = state.defaults.income > 0 || state.defaults.savingsGoal > 0;
+  console.log('hasDefaults:', hasDefaults); // 👈
 
   if (!hasDefaults) {
     document.getElementById('setup-panel-overlay').classList.add('open');
