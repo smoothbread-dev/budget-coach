@@ -1058,3 +1058,107 @@ body {
   border-color: rgba(255,80,80,0.4);
   color: #ff6b6b;
 }
+
+/* ── User Menu Wrapper ── */
+.user-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* ── Avatar Button ── */
+.user-avatar-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.user-avatar-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Avatar Circle ── */
+.user-avatar-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #4f8ef7;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+/* ── Chevron ── */
+.user-avatar-chevron {
+  color: #aaa;
+  font-size: 0.75rem;
+  transition: transform 0.2s;
+}
+
+/* Rotate chevron when dropdown is open */
+.user-menu.open .user-avatar-chevron {
+  transform: rotate(180deg);
+}
+
+/* ── Dropdown Panel ── */
+.user-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 220px;
+  background: #1e1e2e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 10px 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+}
+
+/* Show dropdown when open */
+.user-menu.open .user-dropdown {
+  display: block;
+}
+
+/* ── Email inside dropdown ── */
+.user-dropdown-email {
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  color: #aaa;
+  word-break: break-all;
+}
+
+/* ── Divider ── */
+.user-dropdown-divider {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 6px 0;
+}
+
+/* ── Sign Out button inside dropdown ── */
+.user-dropdown-signout {
+  width: 100%;
+  background: none;
+  border: none;
+  color: #ff6b6b;
+  font-size: 0.88rem;
+  text-align: left;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.user-dropdown-signout:hover {
+  background: rgba(255, 107, 107, 0.1);
+}
