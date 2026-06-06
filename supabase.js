@@ -23,9 +23,11 @@ let appInitialised   = false;
 sb.auth.onAuthStateChange((event, session) => {
   if (session?.user) {
     currentUser = session.user;
+    setUserAvatar(currentUser.email);
     showApp();
   } else {
     currentUser = null;
+    clearUserAvatar();
     showAuth();
   }
 });
@@ -138,4 +140,32 @@ document.addEventListener('click', async (e) => {
   if (e.target.id === 'logout-btn') {
     await sb.auth.signOut();
   }
+});
+
+// ─────────────────────────────────────────
+// USER AVATAR & DROPDOWN
+// ─────────────────────────────────────────
+
+/** Populates the avatar circle initial and dropdown email */
+function setUserAvatar(email) {
+  const initial = email ? email.charAt(0).toUpperCase() : '?';
+  document.getElementById('user-avatar-initial').textContent = initial;
+  document.getElementById('user-dropdown-email').textContent = email || '';
+}
+
+/** Clears the avatar on logout */
+function clearUserAvatar() {
+  document.getElementById('user-avatar-initial').textContent = '?';
+  document.getElementById('user-dropdown-email').textContent = '';
+}
+
+/** Toggles the dropdown open/closed */
+document.getElementById('user-avatar-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  document.getElementById('user-menu').classList.toggle('open');
+});
+
+/** Closes the dropdown when clicking anywhere outside */
+document.addEventListener('click', () => {
+  document.getElementById('user-menu').classList.remove('open');
 });
