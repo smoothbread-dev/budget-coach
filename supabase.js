@@ -26,14 +26,11 @@ sb.auth.onAuthStateChange(async (event, session) => {
   if (session?.user) {
     currentUser = session.user;
 
-    if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
-      
-      // Reset so INITIAL_SESSION can always do a full init
-      if (event === 'INITIAL_SESSION') appInitialised = false;
-
-      showApp();
+    if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+      showApp();          // ← only handles DOM/template (runs once)
       initUserMenu();
       setUserAvatar(currentUser.email);
+      await initApp();   // ← always runs on every valid auth event
     }
 
   } else {
@@ -59,16 +56,15 @@ function showApp() {
   const app = document.getElementById('app');
   app.style.display = 'block';
 
+  // Only inject template once, ever
   if (appInitialised) return;
   appInitialised = true;
 
   const template = document.getElementById('app-template');
-  console.log('Template found:', template); // 👈 Add this
-  console.log('App element:', app);         // 👈 And this
+  console.log('Template found:', template);
+  console.log('App element:', app);
 
   app.appendChild(template.content.cloneNode(true));
-
-  if (typeof initApp === 'function') initApp();
 }
 
 /** Call this once after showApp() renders the header */
