@@ -20,18 +20,27 @@ let appInitialised   = false;
  * Listens for Supabase auth state changes.
  * Routes to the app on login and back to the auth screen on logout.
  */
-sb.auth.onAuthStateChange((event, session) => {
+sb.auth.onAuthStateChange(async (event, session) => {
   console.log('Auth event:', event, '| User:', session?.user?.email);
-  
+
   if (session?.user) {
     currentUser = session.user;
-    showApp();
-    initUserMenu();
-    setUserAvatar(currentUser.email);
+
+    if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+      
+      // Reset so INITIAL_SESSION can always do a full init
+      if (event === 'INITIAL_SESSION') appInitialised = false;
+
+      showApp();
+      initUserMenu();
+      setUserAvatar(currentUser.email);
+    }
+
   } else {
     currentUser = null;
-    clearUserAvatar();
+    appInitialised = false;
     showAuth();
+    clearUserAvatar();
   }
 });
 
