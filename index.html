@@ -55,7 +55,18 @@
       <button class="nav-tab-btn"        id="tab-btn-defaults"  onclick="switchTab('defaults')">Defaults</button>
     </nav>
 
-    <button class="btn btn-secondary signout-btn" id="logout-btn">Sign Out</button>
+    <!-- User Avatar Dropdown -->
+    <div class="user-menu" id="user-menu">
+      <button class="user-avatar-btn" id="user-avatar-btn" aria-label="User menu">
+        <span class="user-avatar-circle" id="user-avatar-initial">?</span>
+        <span class="user-avatar-chevron">▾</span>
+      </button>
+      <div class="user-dropdown" id="user-dropdown">
+        <div class="user-dropdown-email" id="user-dropdown-email">loading...</div>
+        <hr class="user-dropdown-divider" />
+        <button class="user-dropdown-signout" id="logout-btn">🚪 Sign Out</button>
+      </div>
+    </div>
 
   </header>
 
