@@ -37,6 +37,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         showApp();
+
+        // Wait for DOM injection to complete before wiring up UI
+        await new Promise(resolve => setTimeout(resolve, 0)); // 👈 yields to browser
+        
         initUserMenu();
         setUserAvatar(currentUser.email);
         await initApp();
@@ -79,16 +83,27 @@ function showApp() {
 
 /** Call this once after showApp() renders the header */
 function initUserMenu() {
+  // Retry if DOM isn't ready yet
   const avatarBtn = document.getElementById('user-avatar-btn');
-  if (!avatarBtn) return;
+  if (!avatarBtn) {
+    console.warn('initUserMenu: avatar btn not found, retrying...');
+    setTimeout(initUserMenu, 100); // 👈 retry after 100ms
+    return;
+  }
 
-  // Remove old listener to avoid duplicates on re-login
-  avatarBtn.replaceWith(avatarBtn.cloneNode(true));
+  // Remove old listeners cleanly
+  const freshBtn = avatarBtn.cloneNode(true);
+  avatarBtn.replaceWith(freshBtn);
 
-  document.getElementById('user-avatar-btn').addEventListener('click', (e) => {
+  freshBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     document.getElementById('user-menu')?.classList.toggle('open');
   });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', () => {
+    document.getElementById('user-menu')?.classList.remove('open');
+  }, { once: false });
 }
 
 // ─────────────────────────────────────────
