@@ -23,11 +23,8 @@ let appInitialised   = false;
 document.addEventListener('DOMContentLoaded', () => {
 
   sb.auth.onAuthStateChange(async (event, session) => {
-    console.log('Auth event:', event, '| User:', session?.user?.email);
-
     // Guard against ghost events with no user
     if (event === 'INITIAL_SESSION' && !session?.user) {
-      console.log('No session on INITIAL_SESSION, showing auth');
       showAuth();
       return;
     }
@@ -75,9 +72,6 @@ function showApp() {
   appInitialised = true;
 
   const template = document.getElementById('app-template');
-  console.log('Template found:', template);
-  console.log('App element:', app);
-
   app.appendChild(template.content.cloneNode(true));
 }
 
