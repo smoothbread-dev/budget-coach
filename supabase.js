@@ -52,6 +52,9 @@ function showApp() {
   appInitialised = true;
 
   const template = document.getElementById('app-template');
+  console.log('Template found:', template); // 👈 Add this
+  console.log('App element:', app);         // 👈 And this
+
   app.appendChild(template.content.cloneNode(true));
 
   if (typeof initApp === 'function') initApp();
