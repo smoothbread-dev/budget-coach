@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /** Closes the dropdown when clicking anywhere outside */
   document.addEventListener('click', () => {
-    document.getElementById('user-menu').classList.remove('open');
+    document.getElementById('user-menu')?.classList.remove('open');
   });
 
 });
