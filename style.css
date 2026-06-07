@@ -1542,6 +1542,46 @@ body {
   .coach-me-btn  { font-size: 0.85rem; padding: 12px 20px; }
   .panel-box     { padding: 22px 18px; }
   .total-expenses-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+
+   /* Total expenses card — mobile fixes */
+  .total-expenses-row {
+    display:        flex;
+    flex-wrap:      wrap;
+    align-items:    center;
+    gap:            6px 10px;
+  }
+
+  .total-exp-main {
+    font-size:   1.4rem !important;
+    white-space: nowrap;   /* prevent RM / amount split */
+    flex-shrink: 0;
+  }
+
+  .total-exp-gross {
+    font-size:  0.78rem;
+    color:      var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .total-expenses-pct {
+    margin-left: auto;     /* push badge to right */
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .total-exp-breakdown {
+    width:      100%;      /* force onto its own line */
+    font-size:  0.75rem;
+    word-break: break-word;
+  }
+
+  .total-exp-income-label {
+    width:      100%;
+    font-size:  0.75rem;
+    color:      var(--text-muted);
+    margin-top: -4px;
+  }
 }
 
 @media (max-width: 400px) {
