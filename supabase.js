@@ -9,12 +9,31 @@ const SUPABASE_KEY = 'SUPABASE_KEY_PLACEHOLDER';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+startKeepAlive();
+
 // ─────────────────────────────────────────
 // AUTH STATE
 // ─────────────────────────────────────────
 let currentUser      = null;
 let isSignUp         = false;
 let appInitialised   = false;
+
+// ─────────────────────────────────────────
+// KEEP ALIVE — prevents Supabase free tier pausing
+// Pings the DB every 4 days
+// ─────────────────────────────────────────
+function startKeepAlive() {
+  const FOUR_DAYS_MS = 4 * 24 * 60 * 60 * 1000;
+
+  setInterval(async () => {
+    try {
+      await sb.from('user_defaults').select('user_id').limit(1);
+      console.log('[KeepAlive] Supabase pinged successfully');
+    } catch (err) {
+      console.warn('[KeepAlive] Ping failed:', err.message);
+    }
+  }, FOUR_DAYS_MS);
+}
 
 /**
  * Listens for Supabase auth state changes.
@@ -50,8 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
       clearUserAvatar();
     }
   });
-
 });
+
 // ─────────────────────────────────────────
 // SHOW APP
 // ─────────────────────────────────────────
