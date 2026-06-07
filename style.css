@@ -1317,6 +1317,19 @@ body {
 .history-stat .hr.want { color: var(--wants); }
 .history-stat .hr.save { color: var(--savings); }
 
+/* Savings value + percentage stacked neatly */
+.hr.save {
+  display:        flex;
+  flex-direction: column;
+  align-items:    flex-end;
+}
+
+.savings-pct {
+  font-size:  0.75rem;
+  opacity:    0.75;
+  line-height:1.2;
+}
+
 .ai-badge {
   margin-top:    10px;
   font-size:     0.72rem;
