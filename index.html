@@ -22,9 +22,9 @@
 
     <input type="email"    id="auth-email"    placeholder="Email address" />
     <div style="position: relative; width: 100%;">
-      <input 
-        type="password" 
-        id="auth-password" 
+      <input
+        type="password"
+        id="auth-password"
         placeholder="Password"
         style="width: 100%; padding-right: 45px; box-sizing: border-box;"
       />
@@ -41,14 +41,12 @@
         padding: 0;
         line-height: 1;
       ">
-        <!-- Eye open SVG icon -->
         <svg id="icon-eye-open" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
           stroke-linecap="round" stroke-linejoin="round">
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
           <circle cx="12" cy="12" r="3"/>
         </svg>
-        <!-- Eye closed SVG icon -->
         <svg id="icon-eye-closed" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
           stroke-linecap="round" stroke-linejoin="round" style="display:none;">
@@ -62,13 +60,8 @@
     <button id="auth-submit-btn">Sign In</button>
     <button id="auth-toggle-btn">Don't have an account? Sign Up</button>
 
-    <!--
-      bc-hidden is safe here: supabase.js controls this via
-      errorEl.style.display = 'block' / 'none' — inline style
-      always beats the class, so this is fine.
-    -->
     <p id="auth-error" class="bc-hidden" style="color:red"></p>
-    
+
     <div id="auth-info" class="bc-hidden" style="
       background: rgba(108,99,255,0.1);
       border: 1px solid rgba(108,99,255,0.3);
@@ -114,7 +107,7 @@
     <nav class="nav-tabs">
       <button class="nav-tab-btn active" id="tab-btn-planner"   onclick="switchTab('planner')">Plan</button>
       <button class="nav-tab-btn"        id="tab-btn-recurring" onclick="switchTab('recurring')">Recurring</button>
-      <button class="nav-tab-btn"        id="tab-btn-savings"           onclick="switchTab('savings')" data-tab="savings">Savings</button>
+      <button class="nav-tab-btn"        id="tab-btn-savings"   onclick="switchTab('savings')" data-tab="savings">Savings</button>
       <button class="nav-tab-btn"        id="tab-btn-history"   onclick="switchTab('history')">History</button>
       <button class="nav-tab-btn"        id="tab-btn-defaults"  onclick="switchTab('defaults')">Defaults</button>
     </nav>
@@ -168,11 +161,6 @@
             <span class="income-amount" id="income-display">—</span>
           </div>
           <div class="income-actions">
-            <!--
-              JS-controlled: app.js sets style.display directly.
-              Must use inline style="display:none" so JS can override it
-              with style.display = 'flex' / 'block' without class conflict.
-            -->
             <div class="goal-badge" id="goal-badge" style="display:none">
               🎯 <span id="goal-badge-text">0% goal</span>
             </div>
@@ -180,7 +168,6 @@
             <button class="icon-btn" title="Edit savings goal"    onclick="openGoalPanel()">🎯</button>
           </div>
         </div>
-        <!-- JS-controlled: must stay as inline style -->
         <div class="goal-bar-wrap" id="goal-bar-wrap" style="display:none">
           <div class="goal-bar-labels">
             <span>Projected Savings</span>
@@ -200,7 +187,6 @@
           <button class="month-nav-btn" onclick="changeMonth(-1)">‹</button>
           <span class="month-label" id="month-label">—</span>
           <button class="month-nav-btn" onclick="changeMonth(1)">›</button>
-          <!-- JS adds/removes .hidden class — keep as-is -->
           <button class="month-delete-btn hidden" id="month-delete-btn"
                   onclick="confirmDeleteMonth()" title="Delete all data for this month">
             🗑️
@@ -224,13 +210,12 @@
         </div>
       </div>
 
-      <!-- Total Expenses Bar — JS-controlled -->
+      <!-- Total Expenses Bar -->
       <div class="total-expenses-card" id="total-expenses-card" style="display:none">
         <div class="total-expenses-row">
           <span class="total-expenses-label">📊 Total Expected Expenses</span>
           <div class="total-expenses-right">
             <span class="total-expenses-main" id="total-exp-main">RM 0</span>
-            <!-- JS-controlled -->
             <span class="total-expenses-gross" id="total-exp-gross" style="display:none"></span>
             <span class="total-expenses-pct safe" id="total-exp-pct">0%</span>
           </div>
@@ -258,7 +243,6 @@
         <div class="subsection-label bc-mt-12">📌 One-off</div>
         <div id="needs-oneoff-list"></div>
         <button class="add-item-trigger" onclick="toggleAddForm('needs')">+ Add Expected Need</button>
-        <!-- JS-controlled -->
         <div id="add-form-needs" style="display:none">
           <div class="add-form bc-mt-10" id="add-form-needs-inner"></div>
         </div>
@@ -278,13 +262,74 @@
         <div class="subsection-label bc-mt-12">📌 One-off</div>
         <div id="wants-oneoff-list"></div>
         <button class="add-item-trigger" onclick="toggleAddForm('wants')">+ Add Expected Want</button>
-        <!-- JS-controlled -->
         <div id="add-form-wants" style="display:none">
           <div class="add-form bc-mt-10" id="add-form-wants-inner"></div>
         </div>
       </div>
 
-      <!-- AI Review — JS-controlled -->
+      <!-- ════════ SAVINGS ALLOCATION (Plan Tab) ════════ -->
+      <div class="card" id="plan-savings-card">
+        <div class="section-header">
+          <div class="section-title">
+            <div class="section-dot" style="background:var(--savings)"></div>
+            💰 Savings Allocation
+          </div>
+          <span class="section-total" id="plan-savings-total">RM 0</span>
+        </div>
+
+        <p class="bc-tab-description" style="margin-bottom:12px">
+          Allocate a portion of your projected savings to your savings goals this month.
+          Amounts here are for planning only — they don't affect your projected savings figure.
+        </p>
+
+        <!-- Warning banner — shown when over-allocated -->
+        <div id="plan-savings-warning" class="plan-savings-warning" style="display:none">
+          ⚠️ You've allocated more than your projected savings! Reduce your allocations or trim your expenses.
+        </div>
+
+        <!-- Allocation summary row -->
+        <div id="plan-savings-summary" class="plan-savings-summary" style="display:none">
+          <span id="plan-savings-summary-text"></span>
+        </div>
+
+        <!-- List of current allocations -->
+        <div id="plan-savings-list"></div>
+
+        <!-- Add allocation trigger -->
+        <button class="add-item-trigger" onclick="togglePlanSavingsForm()" id="plan-savings-add-btn">
+          + Allocate Savings
+        </button>
+
+        <!-- Add allocation form -->
+        <div id="plan-savings-form" style="display:none">
+          <div class="add-form bc-mt-10">
+            <div class="form-row" style="margin-bottom:10px">
+              <div class="form-field">
+                <label class="form-label">Savings Category</label>
+                <select class="form-select" id="plan-savings-category-select" onchange="onPlanSavingsCategoryChange()">
+                  <option value="">— Select a category —</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row two">
+              <div class="form-field">
+                <label class="form-label">Amount (RM)</label>
+                <input class="form-input" id="plan-savings-amount" type="number" placeholder="0.00" min="0" step="0.01" />
+              </div>
+              <div class="form-field">
+                <label class="form-label">Monthly Contribution</label>
+                <input class="form-input" id="plan-savings-monthly-hint" type="text" disabled placeholder="—" style="color:var(--text-muted)" />
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-secondary btn-sm" onclick="togglePlanSavingsForm()">Cancel</button>
+              <button class="btn btn-primary btn-sm"   onclick="addPlanSavingsAllocation()">Add</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Review -->
       <div id="ai-review-card" class="ai-review-card" style="display:none">
         <div class="card-title">🤖 Coach's Advice</div>
         <div id="ai-review-content"></div>
@@ -292,7 +337,7 @@
 
     </div><!-- /tab-planner -->
 
-    <!-- ════════ RECURRING TAB — JS-controlled via switchTab() ════════ -->
+    <!-- ════════ RECURRING TAB ════════ -->
     <div id="tab-recurring" style="display:none">
       <div class="card">
         <div class="section-header">
@@ -309,7 +354,7 @@
       </div>
     </div>
 
-    <!-- SAVINGS TAB -->
+    <!-- ════════ SAVINGS TAB ════════ -->
     <div id="tab-savings" style="display:none">
       <div class="card">
         <div class="section-header">
@@ -320,7 +365,7 @@
       </div>
     </div>
 
-    <!-- ════════ HISTORY TAB — JS-controlled via switchTab() ════════ -->
+    <!-- ════════ HISTORY TAB ════════ -->
     <div id="tab-history" style="display:none">
       <div class="card">
         <div class="card-title">📖 Plan History</div>
@@ -328,7 +373,7 @@
       </div>
     </div>
 
-    <!-- ════════ DEFAULTS TAB — JS-controlled via switchTab() ════════ -->
+    <!-- ════════ DEFAULTS TAB ════════ -->
     <div id="tab-defaults" style="display:none">
       <div class="card">
         <div class="card-title">⚙️ Default Values</div>
@@ -567,7 +612,6 @@
           <option value="oneoff">One-off</option>
         </select>
       </div>
-      <!-- JS-controlled -->
       <div id="edit-funded-wrap" style="display:none; margin-bottom:14px">
         <label class="funded-check-wrap">
           <input type="checkbox" id="edit-item-funded" />
@@ -581,44 +625,83 @@
     </div>
   </div>
 
-  <!-- SAVINGS CATEGORY MODAL -->
-  <div id="savings-category-modal" class="panel-overlay" onclick="handlePanelOverlayClick(event, 'savings-category-modal')">
+  <!-- ══════════════════════════════════════════
+       SAVINGS CATEGORY MODAL
+  ══════════════════════════════════════════ -->
+  <div id="savings-category-modal" class="panel-overlay"
+       onclick="handlePanelOverlayClick(event, 'savings-category-modal')">
     <div class="panel-box">
-  
       <div class="panel-title" id="savings-category-modal-title">Add Savings Category</div>
       <div class="panel-subtitle">Set a name, monthly contribution and goal amount.</div>
-  
+
       <input type="hidden" id="savings-category-id">
-  
+
       <div class="panel-field">
         <label class="panel-label">Category Name</label>
-        <input type="text" id="savings-category-name" class="panel-input" placeholder="e.g. Emergency Fund, Holiday, New Car">
+        <input type="text" id="savings-category-name" class="panel-input"
+               placeholder="e.g. Emergency Fund, Holiday, New Car">
       </div>
-  
+
       <div class="panel-field">
         <label class="panel-label">Monthly Contribution (RM)</label>
         <div class="currency-wrap">
           <span class="currency-prefix">RM</span>
-          <input type="number" id="savings-category-monthly" class="panel-input" placeholder="e.g. 200" min="0" step="0.01">
+          <input type="number" id="savings-category-monthly" class="panel-input"
+                 placeholder="e.g. 200" min="0" step="0.01">
         </div>
       </div>
-  
+
       <div class="panel-field">
         <label class="panel-label">Goal Amount (RM)</label>
         <div class="currency-wrap">
           <span class="currency-prefix">RM</span>
-          <input type="number" id="savings-category-goal" class="panel-input" placeholder="e.g. 5000" min="0.01" step="0.01">
+          <input type="number" id="savings-category-goal" class="panel-input"
+                 placeholder="e.g. 5000" min="0.01" step="0.01">
         </div>
       </div>
-  
+
       <div class="panel-actions">
         <button class="btn btn-secondary" onclick="closeSavingsCategoryModal()">Cancel</button>
         <button class="btn btn-primary"   onclick="submitSavingsCategoryModal()">Save</button>
       </div>
-  
     </div>
   </div>
-  
+
+  <!-- ══════════════════════════════════════════
+       SAVINGS ADJUSTMENT MODAL
+  ══════════════════════════════════════════ -->
+  <div id="savings-adjustment-modal" class="panel-overlay"
+       onclick="handlePanelOverlayClick(event, 'savings-adjustment-modal')">
+    <div class="panel-box">
+      <div class="panel-title" id="savings-adjustment-modal-title">Add Adjustment</div>
+      <div class="panel-subtitle">
+        Record a deposit (+) or withdrawal (−) for this savings category.
+      </div>
+
+      <input type="hidden" id="savings-adjustment-category-id">
+
+      <div class="panel-field">
+        <label class="panel-label">Amount (RM) — use negative to deduct</label>
+        <div class="currency-wrap">
+          <span class="currency-prefix">RM</span>
+          <input type="number" id="savings-adjustment-amount" class="panel-input"
+                 placeholder="e.g. 500 or -200" step="0.01">
+        </div>
+      </div>
+
+      <div class="panel-field">
+        <label class="panel-label">Note (optional)</label>
+        <input type="text" id="savings-adjustment-note" class="panel-input"
+               placeholder="e.g. Bonus contribution, Emergency withdrawal">
+      </div>
+
+      <div class="panel-actions">
+        <button class="btn btn-secondary" onclick="closePanel('savings-adjustment-modal')">Cancel</button>
+        <button class="btn btn-primary"   onclick="submitSavingsAdjustment()">Save Adjustment</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ══════════════════════════════════════════
        HISTORY DETAIL MODAL
   ══════════════════════════════════════════ -->
