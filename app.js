@@ -1747,8 +1747,14 @@ function renderHistory() {
         <div class="history-stat"><span class="hl">Income</span><span class="hr">${fmt(data.income)}</span></div>
         <div class="history-stat"><span class="hl">Needs</span><span class="hr need">${fmt(needs)}</span></div>
         <div class="history-stat"><span class="hl">Wants</span><span class="hr want">${fmt(wants)}</span></div>
-        <div class="history-stat"><span class="hl">Savings</span><span class="hr save">${fmt(savings)} (${savPct.toFixed(1)}%)</span></div>
-        ${goal > 0 ? `
+      <div class="history-stat">
+        <span class="hl">Savings</span>
+        <span class="hr save">
+          ${fmt(savings)}
+          <span class="savings-pct">(${savPct.toFixed(1)}%)</span>
+        </span>
+      </div>
+      ${goal > 0 ? `
         <div class="history-stat" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">
           <span class="hl">Goal</span>
           <span class="hr" style="color:${savPct >= goal ? 'var(--accent2)' : 'var(--danger)'}">
