@@ -87,7 +87,7 @@ async function loadFromSupabase() {
 
   if (recurring) {
     state.recurringItems = recurring.map(r => ({
-      id:     r.id,
+      id:     String(r.id),
       name:   r.name,
       amount: r.amount
     }));
@@ -679,7 +679,7 @@ function openRecurringPanel(id) {
   const saveBtn = document.getElementById('recurring-panel-save-btn');
 
   if (id) {
-    const item = state.recurringItems.find(r => r.id === id);
+    const item = state.recurringItems.find(r => r.id == id);
     if (!item) return;
     document.getElementById('panel-rec-name').value   = item.name;
     document.getElementById('panel-rec-amount').value = item.amount;
