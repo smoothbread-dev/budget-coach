@@ -254,12 +254,25 @@ body {
    MAIN CONTENT
 ───────────────────────────────────────── */
 .main-content {
-  max-width: 720px;
-  margin:    0 auto;
-  padding:   20px 16px 120px;
-  display:   flex;
+  max-width:      720px;
+  margin:         0 auto;
+  padding:        20px 16px 120px;
+  display:        flex;
   flex-direction: column;
-  gap:       16px;
+  gap:            14px;
+}
+
+/* ─────────────────────────────────────────
+   CARD SPACING — ensure all direct children
+   of main-content have visible separation
+───────────────────────────────────────── */
+.main-content > .card,
+.main-content > .summary-strip,
+.main-content > .total-expenses-card,
+.main-content > .ai-review-card,
+.main-content > .purpose-banner,
+.main-content > .coach-me-wrap {
+  margin-bottom: 0;   /* gap handles spacing */
 }
 
 /* ─────────────────────────────────────────
@@ -331,6 +344,7 @@ body {
   border:        1px solid var(--border);
   border-radius: var(--radius);
   padding:       20px;
+  box-shadow:    0 2px 12px rgba(0,0,0,0.3);
 }
 
 .card-title {
@@ -439,21 +453,22 @@ body {
 /* ─────────────────────────────────────────
    MONTH NAV
 ───────────────────────────────────────── */
-.bc-p-month-nav { padding: 12px 20px; }
+.bc-p-month-nav { 
+  padding: 10px 20px; 
+}
 
 .month-nav {
   display:         flex;
   align-items:     center;
   justify-content: space-between;
   width:           100%;
+  gap:             12px;
 }
 
 .month-nav-center {
   display:     flex;
   align-items: center;
-  gap:         16px;
-  flex:        1;
-  justify-content: center;
+  gap:         12px;
 }
 
 .month-nav-btn {
@@ -512,6 +527,10 @@ body {
   gap:           4px;
 }
 
+.summary-strip .summary-tile {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+
 .summary-tile .label {
   font-size:  0.72rem;
   color:      var(--text-muted);
@@ -537,6 +556,7 @@ body {
   border:        1px solid var(--border);
   border-radius: var(--radius);
   padding:       16px 20px;
+  box-shadow:    0 2px 12px rgba(0,0,0,0.3);
 }
 
 .total-expenses-row {
