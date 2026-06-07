@@ -304,6 +304,7 @@ async function initApp() {
   const hasDefaults = state.defaults.income > 0 || state.defaults.savingsGoal > 0;
   if (!hasDefaults) {
     document.getElementById('setup-panel-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden'; // 🔒
     return;
   }
 
@@ -363,6 +364,7 @@ function checkAndPromptMonth() {
     document.getElementById('defaults-prompt-values').textContent = parts.join(' · ');
 
     document.getElementById('defaults-prompt-overlay').classList.add('open');
+    document.body.style.overflow = 'hidden'; // 🔒
   } else if (!data.income) {
     openIncomePanel();
   } else {
@@ -511,6 +513,7 @@ async function deleteCurrentMonth() {
 /** Opens a panel overlay and optionally focuses an input inside it. */
 function openPanel(overlayId, focusId) {
   document.getElementById(overlayId).classList.add('open');
+  document.body.style.overflow = 'hidden'; // 🔒 lock scroll
   if (focusId) {
     setTimeout(() => document.getElementById(focusId).focus(), FOCUS_DELAY);
   }
@@ -1227,6 +1230,7 @@ function openHistoryModal(key) {
   `;
 
   document.getElementById('history-modal').classList.add('open');
+  document.body.style.overflow = 'hidden'; // 🔒 lock scroll
 }
 
 /** Toggles a collapsible section open or closed. */
@@ -1238,6 +1242,7 @@ function toggleCollapsible(header) {
 /** Closes the history detail modal. */
 function closeHistoryModal() {
   document.getElementById('history-modal').classList.remove('open');
+  document.body.style.overflow = ''; // 🔓 unlock scroll
 }
 
 /** Closes the history modal when the user clicks the backdrop. */
@@ -1252,6 +1257,7 @@ function handleModalOverlayClick(e) {
 /** Closes a panel overlay by removing the 'open' class. */
 function closePanel(id) {
   document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = ''; // 🔓 unlock scroll
 }
 
 /**
