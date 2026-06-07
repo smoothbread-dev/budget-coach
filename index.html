@@ -184,9 +184,11 @@
       <!-- Month Navigator -->
       <div class="card bc-p-month-nav">
         <div class="month-nav">
-          <button class="month-nav-btn" onclick="changeMonth(-1)">‹</button>
-          <span class="month-label" id="month-label">—</span>
-          <button class="month-nav-btn" onclick="changeMonth(1)">›</button>
+          <div class="month-nav-center">
+            <button class="month-nav-btn" onclick="changeMonth(-1)">‹</button>
+            <span class="month-label" id="month-label">—</span>
+            <button class="month-nav-btn" onclick="changeMonth(1)">›</button>
+          </div>
           <button class="month-delete-btn hidden" id="month-delete-btn"
                   onclick="confirmDeleteMonth()" title="Delete all data for this month">
             🗑️
