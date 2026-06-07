@@ -1227,19 +1227,18 @@ function onPlanSavingsCategoryChange() {
  * Validates and saves a new savings allocation for the current month.
  */
 async function addPlanSavingsAllocation() {
-  const select     = document.getElementById('plan-savings-category-select');
+  const select      = document.getElementById('plan-savings-category-select');
   const amountInput = document.getElementById('plan-savings-amount');
-  const categoryId = select.value;
-  const amount     = parseFloat(amountInput.value);
+  const categoryId  = String(select.value);
+  const amount      = parseFloat(amountInput.value);
 
   if (!categoryId) { alert('Please select a savings category.'); return; }
   if (isNaN(amount) || amount <= 0) { alert('Please enter a valid amount.'); return; }
 
-  const result = await upsertPlanSavings(categoryId, amount);
-  if (result) {
-    document.getElementById('plan-savings-form').style.display = 'none';
-    renderPlanSavingsSection();
-  }
+  await upsertPlanSavings(categoryId, amount);
+
+  document.getElementById('plan-savings-form').style.display = 'none';
+  renderPlanSavingsSection();
 }
 
 /**
