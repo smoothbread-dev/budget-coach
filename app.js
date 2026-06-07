@@ -702,13 +702,13 @@ async function saveRecurringPanel() {
   if (!amount || amount <= 0) { alert('Please enter a valid amount.'); return; }
 
   if (editingRecurringId) {
-    const item = state.recurringItems.find(r => r.id === editingRecurringId);
+    const item = state.recurringItems.find(r => String(r.id) === String(editingRecurringId)); // ✅ safe compare
     if (item) { item.name = name; item.amount = amount; }
     await saveRecurringItem({ id: editingRecurringId, name, amount });
   } else {
     const realId = await saveRecurringItem({ name, amount, _isNew: true });
     if (realId) {
-      state.recurringItems.push({ id: realId, name, amount });
+      state.recurringItems.push({ id: String(realId), name, amount }); // ✅ always store as string
     }
   }
 
