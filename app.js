@@ -28,6 +28,8 @@ let state = {
   months:         {}
 };
 
+let savingsCategories = [];
+
 // ─────────────────────────────────────────
 // TOAST
 // ─────────────────────────────────────────
@@ -107,6 +109,16 @@ async function loadFromSupabase() {
         aiReview:    plan.ai_review
       };
     });
+  }
+
+  const { data: savingsCats } = await sb
+    .from('savings_categories')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
+
+  if (savingsCats) {
+    savingsCategories = savingsCats;
   }
 }
 
@@ -755,6 +767,181 @@ function renderRecurringMasterList() {
       </div>
     </div>
   `).join('');
+}
+
+// ─────────────────────────────────────────
+// SAVINGS CATEGORIES
+// ─────────────────────────────────────────
+
+async function fetchSavingsCategories() {
+  const { data, error } = await sb
+    .from('savings_categories')
+    .select('*')
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching savings categories:', error);
+    return;
+  }
+
+  savingsCategories = data || [];
+  renderSavingsCategoriesList();
+}
+
+async function addSavingsCategory(name, monthlyAmount, goalAmount) {
+  showToast('saving');
+
+  const { data, error } = await sb
+    .from('savings_categories')
+    .insert([{
+      user_id:        currentUser.id,
+      name:           name.trim(),
+      monthly_amount: parseFloat(monthlyAmount),
+      goal_amount:    parseFloat(goalAmount)
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error adding savings category:', error);
+    return;
+  }
+
+  savingsCategories.push(data);
+  renderSavingsCategoriesList();
+  showToast('saved');
+}
+
+async function updateSavingsCategory(id, name, monthlyAmount, goalAmount) {
+  showToast('saving');
+
+  const { error } = await sb
+    .from('savings_categories')
+    .update({
+      name:           name.trim(),
+      monthly_amount: parseFloat(monthlyAmount),
+      goal_amount:    parseFloat(goalAmount)
+    })
+    .eq('id', id)
+    .eq('user_id', currentUser.id);
+
+  if (error) {
+    console.error('Error updating savings category:', error);
+    return;
+  }
+
+  const index = savingsCategories.findIndex(c => c.id === id);
+  if (index !== -1) {
+    savingsCategories[index] = {
+      ...savingsCategories[index],
+      name:           name.trim(),
+      monthly_amount: parseFloat(monthlyAmount),
+      goal_amount:    parseFloat(goalAmount)
+    };
+  }
+
+  renderSavingsCategoriesList();
+  showToast('saved');
+}
+
+async function deleteSavingsCategory(id) {
+  const confirmed = await showConfirm(
+    'Delete this savings category? All monthly allocations for this category will also be removed.',
+    'Delete'
+  );
+  if (!confirmed) return;
+
+  const { error } = await sb
+    .from('savings_categories')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', currentUser.id);
+
+  if (error) {
+    console.error('Error deleting savings category:', error);
+    return;
+  }
+
+  savingsCategories = savingsCategories.filter(c => c.id !== id);
+  renderSavingsCategoriesList();
+  showToast('saved');
+}
+
+function renderSavingsCategoriesList() {
+  const container = document.getElementById('savings-categories-list');
+  if (!container) return;
+
+  if (savingsCategories.length === 0) {
+    container.innerHTML = `
+      <div class="empty-subsection" style="padding:20px 0;text-align:center">
+        No savings categories yet. Add your first one!
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = savingsCategories.map(cat => `
+    <div class="recurring-list-item">
+      <span class="recurring-item-name">${escHtml(cat.name)}</span>
+      <span class="recurring-item-amount">${fmt(cat.monthly_amount)}/mo · Goal: ${fmt(cat.goal_amount)}</span>
+      <div class="item-actions">
+        <button class="item-action-btn edit" onclick="openEditSavingsCategoryModal('${cat.id}')" title="Edit">✎</button>
+        <button class="item-action-btn del"  onclick="deleteSavingsCategory('${cat.id}')" title="Delete">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openAddSavingsCategoryModal() {
+  document.getElementById('savings-category-modal-title').textContent = 'Add Savings Category';
+  document.getElementById('savings-category-id').value      = '';
+  document.getElementById('savings-category-name').value    = '';
+  document.getElementById('savings-category-monthly').value = '';
+  document.getElementById('savings-category-goal').value    = '';
+  openPanel('savings-category-modal', 'savings-category-name');
+}
+
+function openEditSavingsCategoryModal(id) {
+  const cat = savingsCategories.find(c => c.id === id);
+  if (!cat) return;
+
+  document.getElementById('savings-category-modal-title').textContent = 'Edit Savings Category';
+  document.getElementById('savings-category-id').value      = cat.id;
+  document.getElementById('savings-category-name').value    = cat.name;
+  document.getElementById('savings-category-monthly').value = cat.monthly_amount;
+  document.getElementById('savings-category-goal').value    = cat.goal_amount;
+  openPanel('savings-category-modal', 'savings-category-name');
+}
+
+function closeSavingsCategoryModal() {
+  closePanel('savings-category-modal');
+}
+
+async function submitSavingsCategoryModal() {
+  const id            = document.getElementById('savings-category-id').value;
+  const name          = document.getElementById('savings-category-name').value.trim();
+  const monthlyAmount = document.getElementById('savings-category-monthly').value;
+  const goalAmount    = document.getElementById('savings-category-goal').value;
+
+  if (!name) {
+    alert('Please enter a category name.');
+    return;
+  }
+  if (isNaN(parseFloat(monthlyAmount)) || parseFloat(monthlyAmount) < 0) {
+    alert('Please enter a valid monthly amount.');
+    return;
+  }
+  if (isNaN(parseFloat(goalAmount)) || parseFloat(goalAmount) <= 0) {
+    alert('Please enter a valid goal amount.');
+    return;
+  }
+
+  if (id) {
+    await updateSavingsCategory(id, name, monthlyAmount, goalAmount);
+  } else {
+    await addSavingsCategory(name, monthlyAmount, goalAmount);
+  }
+
+  closeSavingsCategoryModal();
 }
 
 // ─────────────────────────────────────────
