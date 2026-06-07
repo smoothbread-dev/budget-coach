@@ -885,7 +885,7 @@ function addItem(cat) {
 // ─────────────────────────────────────────
 
 /** Removes an item from the current month plan by ID and saves. */
-function deleteItem(id) {
+async function deleteItem(id) {
   const data = currentMonthData();
   const item = data.items.find(i => i.id === id);
   if (!item) return;
