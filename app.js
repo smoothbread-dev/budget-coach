@@ -28,13 +28,14 @@ let state = {
   months:         {}
 };
 
-let savingsCategories = [];
+let savingsCategories  = [];   // savings_categories rows
+let savingsAdjustments = [];   // savings_adjustments rows (all for this user)
+let planSavings        = [];   // plan_savings rows (all for this user)
 
 // ─────────────────────────────────────────
 // TOAST
 // ─────────────────────────────────────────
 
-/** Displays a save status toast. Pass 'saving' to show spinner, anything else to show ✓ Saved. */
 function showToast(status) {
   const toast   = document.getElementById('save-toast');
   const spinner = document.getElementById('toast-spinner');
@@ -58,8 +59,7 @@ function showToast(status) {
 // SUPABASE — LOAD
 // ─────────────────────────────────────────
 
-/** Resets state and loads all user data from Supabase. Called once on login. */
-async function loadFromSupabase() {  
+async function loadFromSupabase() {
   state = {
     defaults:       { income: 0, savingsGoal: 0 },
     recurringItems: [],
@@ -70,6 +70,7 @@ async function loadFromSupabase() {
 
   const userId = currentUser.id;
 
+  // Defaults
   const { data: defaults } = await sb
     .from('user_defaults')
     .select('*')
@@ -81,6 +82,7 @@ async function loadFromSupabase() {
     state.defaults.savingsGoal = defaults.savings_goal;
   }
 
+  // Recurring items
   const { data: recurring } = await sb
     .from('recurring_items')
     .select('*')
@@ -95,6 +97,7 @@ async function loadFromSupabase() {
     }));
   }
 
+  // Month plans
   const { data: plans } = await sb
     .from('month_plans')
     .select('*')
@@ -111,22 +114,37 @@ async function loadFromSupabase() {
     });
   }
 
+  // Savings categories
   const { data: savingsCats } = await sb
     .from('savings_categories')
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: true });
 
-  if (savingsCats) {
-    savingsCategories = savingsCats;
-  }
+  if (savingsCats) savingsCategories = savingsCats;
+
+  // Savings adjustments (all for this user)
+  const { data: adjustments } = await sb
+    .from('savings_adjustments')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true });
+
+  if (adjustments) savingsAdjustments = adjustments;
+
+  // Plan savings allocations (all for this user)
+  const { data: planSav } = await sb
+    .from('plan_savings')
+    .select('*')
+    .eq('user_id', userId);
+
+  if (planSav) planSavings = planSav;
 }
 
 // ─────────────────────────────────────────
 // SUPABASE — SAVE DEFAULTS
 // ─────────────────────────────────────────
 
-/** Persists the user's default income and savings goal to Supabase. */
 async function saveDefaults() {
   showToast('saving');
 
@@ -147,18 +165,13 @@ async function saveDefaults() {
 // SUPABASE — SAVE RECURRING ITEMS
 // ─────────────────────────────────────────
 
-/** Inserts or updates a recurring item in Supabase. Returns the item's ID. */
 async function saveRecurringItem(item) {
   showToast('saving');
 
   if (item._isNew) {
     const { data, error } = await sb
       .from('recurring_items')
-      .insert({
-        user_id: currentUser.id,
-        name:    item.name,
-        amount:  item.amount
-      })
+      .insert({ user_id: currentUser.id, name: item.name, amount: item.amount })
       .select()
       .single();
 
@@ -178,7 +191,6 @@ async function saveRecurringItem(item) {
   }
 }
 
-/** Deletes a recurring item from Supabase by ID. */
 async function deleteRecurringFromDB(id) {
   const { error } = await sb
     .from('recurring_items')
@@ -193,10 +205,6 @@ async function deleteRecurringFromDB(id) {
 // SUPABASE — SAVE MONTH PLAN
 // ─────────────────────────────────────────
 
-/**
- * Debounced save trigger. Waits DEBOUNCE_DELAY ms after the last call
- * before writing the current month plan to Supabase.
- */
 const triggerSave = (() => {
   let timer = null;
   return function () {
@@ -206,7 +214,6 @@ const triggerSave = (() => {
   };
 })();
 
-/** Writes the current month's full plan (income, goal, items, AI review) to Supabase. */
 async function saveCurrentMonth() {
   const key  = currentKey();
   const data = currentMonthData();
@@ -228,19 +235,167 @@ async function saveCurrentMonth() {
 }
 
 // ─────────────────────────────────────────
+// SUPABASE — SAVINGS ADJUSTMENTS
+// ─────────────────────────────────────────
+
+/**
+ * Inserts a new savings adjustment row and appends it to local state.
+ */
+async function insertSavingsAdjustment(categoryId, amount, note) {
+  showToast('saving');
+
+  const { data, error } = await sb
+    .from('savings_adjustments')
+    .insert({
+      user_id:             currentUser.id,
+      savings_category_id: categoryId,
+      amount:              amount,
+      note:                note || null
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('insertSavingsAdjustment error:', error);
+    showToast('saved');
+    return null;
+  }
+
+  savingsAdjustments.push(data);
+  showToast('saved');
+  return data;
+}
+
+/**
+ * Deletes a savings adjustment by ID from Supabase and local state.
+ */
+async function deleteSavingsAdjustmentFromDB(id) {
+  const { error } = await sb
+    .from('savings_adjustments')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', currentUser.id);
+
+  if (error) {
+    console.error('deleteSavingsAdjustment error:', error);
+    return false;
+  }
+
+  savingsAdjustments = savingsAdjustments.filter(a => a.id !== id);
+  return true;
+}
+
+/**
+ * Returns all adjustments for a given savings category ID.
+ */
+function getAdjustmentsForCategory(categoryId) {
+  return savingsAdjustments.filter(a => a.savings_category_id === categoryId);
+}
+
+/**
+ * Sums all adjustment amounts for a given savings category.
+ */
+function sumAdjustments(categoryId) {
+  return getAdjustmentsForCategory(categoryId)
+    .reduce((sum, a) => sum + Number(a.amount), 0);
+}
+
+/**
+ * Calculates the total saved for a category:
+ * (monthly_amount × months since created_at) + sum of adjustments
+ */
+function calcCategoryTotalSaved(cat) {
+  const createdAt    = new Date(cat.created_at);
+  const now          = new Date();
+  const monthsElapsed = Math.max(0,
+    (now.getFullYear() - createdAt.getFullYear()) * 12 +
+    (now.getMonth()    - createdAt.getMonth()) + 1
+  );
+  const autoSaved    = Number(cat.monthly_amount) * monthsElapsed;
+  const adjustTotal  = sumAdjustments(cat.id);
+  return autoSaved + adjustTotal;
+}
+
+// ─────────────────────────────────────────
+// SUPABASE — PLAN SAVINGS
+// ─────────────────────────────────────────
+
+/**
+ * Returns all plan_savings rows for the current month key.
+ */
+function getPlanSavingsForCurrentMonth() {
+  return planSavings.filter(p => p.month_key === currentKey());
+}
+
+/**
+ * Upserts a plan_savings allocation for the current month.
+ */
+async function upsertPlanSavings(categoryId, amount) {
+  showToast('saving');
+
+  const { data, error } = await sb
+    .from('plan_savings')
+    .upsert({
+      user_id:             currentUser.id,
+      month_key:           currentKey(),
+      savings_category_id: categoryId,
+      allocated_amount:    amount
+    }, { onConflict: 'user_id,month_key,savings_category_id' })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('upsertPlanSavings error:', error);
+    showToast('saved');
+    return null;
+  }
+
+  // Update local state
+  const idx = planSavings.findIndex(
+    p => p.month_key === currentKey() && p.savings_category_id === categoryId
+  );
+  if (idx !== -1) planSavings[idx] = data;
+  else            planSavings.push(data);
+
+  showToast('saved');
+  return data;
+}
+
+/**
+ * Deletes a plan_savings allocation by its row ID.
+ */
+async function deletePlanSavingsFromDB(id) {
+  const { error } = await sb
+    .from('plan_savings')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', currentUser.id);
+
+  if (error) {
+    console.error('deletePlanSavings error:', error);
+    return false;
+  }
+
+  planSavings = planSavings.filter(p => p.id !== id);
+  return true;
+}
+
+/**
+ * Returns the total allocated savings amount for the current month.
+ */
+function getTotalAllocatedForCurrentMonth() {
+  return getPlanSavingsForCurrentMonth()
+    .reduce((sum, p) => sum + Number(p.allocated_amount), 0);
+}
+
+// ─────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────
 
-/** Returns a zero-padded month key string, e.g. '2025-06'. */
 function monthKey(m, y)   { return `${y}-${String(m + 1).padStart(2, '0')}`; }
-
-/** Returns a human-readable month label, e.g. 'June 2025'. */
 function monthLabel(m, y) { return `${MONTHS[m]} ${y}`; }
-
-/** Returns the month key for the currently viewed month. */
 function currentKey()     { return monthKey(state.currentMonth, state.currentYear); }
 
-/** Returns the plan data object for the currently viewed month, initialising it if missing. */
 function currentMonthData() {
   const key = currentKey();
   if (!state.months[key]) {
@@ -249,7 +404,6 @@ function currentMonthData() {
   return state.months[key];
 }
 
-/** Escapes HTML special characters to prevent XSS when injecting user content into innerHTML. */
 function escHtml(s) {
   return String(s)
     .replace(/&/g, '&amp;')
@@ -257,7 +411,6 @@ function escHtml(s) {
     .replace(/>/g, '&gt;');
 }
 
-/** Formats a number as a Malaysian Ringgit string, e.g. 'RM 1,234.56'. */
 function fmt(n) {
   return `RM ${Number(n).toLocaleString('en-MY', {
     minimumFractionDigits: 2,
@@ -265,16 +418,17 @@ function fmt(n) {
   })}`;
 }
 
-/** Generates a unique ID for in-memory plan items stored in the JSONB array. */
-function generateId() {
-  return crypto.randomUUID();
+function fmtDate(isoString) {
+  const d = new Date(isoString);
+  return d.toLocaleDateString('en-MY', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
+function generateId() { return crypto.randomUUID(); }
 
 // ─────────────────────────────────────────
 // BANNER
 // ─────────────────────────────────────────
 
-/** Hides the purpose banner for the rest of the session and plays its exit animation. */
 function dismissBanner() {
   bannerDismissedThisSession = true;
   const banner = document.getElementById('purpose-banner');
@@ -284,7 +438,6 @@ function dismissBanner() {
   }, { once: true });
 }
 
-/** Shows or hides the purpose banner based on whether it was dismissed this session. */
 function showBannerIfNeeded() {
   const banner = document.getElementById('purpose-banner');
   if (bannerDismissedThisSession) {
@@ -302,12 +455,11 @@ function showBannerIfNeeded() {
 // INIT
 // ─────────────────────────────────────────
 
-/** Initialises the app after login. Loads all Supabase data, then routes to the correct first screen. */
 async function initApp() {
   showToast('saving');
   document.getElementById('toast-label').textContent = 'Loading…';
   await loadFromSupabase();
-  
+
   showToast('saved');
   document.getElementById('toast-label').textContent = '✓ Ready';
 
@@ -316,7 +468,7 @@ async function initApp() {
   const hasDefaults = state.defaults.income > 0 || state.defaults.savingsGoal > 0;
   if (!hasDefaults) {
     document.getElementById('setup-panel-overlay').classList.add('open');
-    document.body.style.overflow = 'hidden'; // 🔒
+    document.body.style.overflow = 'hidden';
     return;
   }
 
@@ -328,7 +480,6 @@ async function initApp() {
 // FIRST-TIME SETUP
 // ─────────────────────────────────────────
 
-/** Saves the first-time setup values (income + goal) and transitions into the main app. */
 async function saveSetup() {
   const income = parseFloat(document.getElementById('setup-income').value) || 0;
   const goal   = Math.min(100, Math.max(0, parseFloat(document.getElementById('setup-goal').value) || 0));
@@ -339,12 +490,10 @@ async function saveSetup() {
   document.getElementById('setup-panel-overlay').classList.remove('open');
 
   await saveDefaults();
-
   checkAndPromptMonth();
   renderDefaultsTab();
 }
 
-/** Skips first-time setup and proceeds directly to the month prompt. */
 function skipSetup() {
   document.getElementById('setup-panel-overlay').classList.remove('open');
   checkAndPromptMonth();
@@ -354,12 +503,6 @@ function skipSetup() {
 // MONTH PROMPT
 // ─────────────────────────────────────────
 
-/**
- * Checks whether the current month has a plan and routes accordingly:
- * - No income + has defaults → show defaults prompt overlay
- * - No income + no defaults → open income panel directly
- * - Has income → render the planner
- */
 function checkAndPromptMonth() {
   const data        = currentMonthData();
   const hasDefaults = state.defaults.income > 0 || state.defaults.savingsGoal > 0;
@@ -376,7 +519,7 @@ function checkAndPromptMonth() {
     document.getElementById('defaults-prompt-values').textContent = parts.join(' · ');
 
     document.getElementById('defaults-prompt-overlay').classList.add('open');
-    document.body.style.overflow = 'hidden'; // 🔒
+    document.body.style.overflow = 'hidden';
   } else if (!data.income) {
     openIncomePanel();
   } else {
@@ -385,7 +528,6 @@ function checkAndPromptMonth() {
   }
 }
 
-/** Applies the user's default income and savings goal to the current month and saves. */
 function applyDefaults() {
   const data       = currentMonthData();
   data.income      = state.defaults.income;
@@ -395,10 +537,6 @@ function applyDefaults() {
   render();
 }
 
-/**
- * Dismisses the defaults prompt and opens the income panel in new-month flow mode.
- * The _fromNewMonthFlow flag ensures cancel routes back to the prompt rather than closing silently.
- */
 function enterOwnValues() {
   document.getElementById('defaults-prompt-overlay').classList.remove('open');
   document.getElementById('panel-income').value = '';
@@ -412,7 +550,6 @@ function enterOwnValues() {
 // TABS
 // ─────────────────────────────────────────
 
-/** Switches the active tab and triggers any tab-specific render logic. */
 function switchTab(tab) {
   ['planner', 'recurring', 'history', 'defaults', 'savings'].forEach(t => {
     document.getElementById(`tab-${t}`).style.display     = t === tab ? '' : 'none';
@@ -421,7 +558,7 @@ function switchTab(tab) {
 
   document.getElementById('coach-me-wrap').style.display = tab === 'planner' ? '' : 'none';
 
-  if (tab === 'planner')   showBannerIfNeeded();
+  if (tab === 'planner')   { showBannerIfNeeded(); render(); }
   if (tab === 'history')   renderHistory();
   if (tab === 'recurring') renderRecurringMasterList();
   if (tab === 'defaults')  renderDefaultsTab();
@@ -432,7 +569,6 @@ function switchTab(tab) {
 // MONTH NAVIGATION
 // ─────────────────────────────────────────
 
-/** Moves the viewed month forward (dir = 1) or backward (dir = -1) and re-evaluates the plan state. */
 function changeMonth(dir) {
   state.currentMonth += dir;
   if (state.currentMonth > 11) { state.currentMonth = 0;  state.currentYear++; }
@@ -442,7 +578,6 @@ function changeMonth(dir) {
   checkAndPromptMonth();
 }
 
-/** Updates the month label element to reflect the currently viewed month. */
 function updateMonthLabel() {
   document.getElementById('month-label').textContent =
     monthLabel(state.currentMonth, state.currentYear);
@@ -452,10 +587,8 @@ function updateMonthLabel() {
 // DELETE MONTH
 // ─────────────────────────────────────────
 
-/** Shows a confirmation dialog before permanently deleting all data for the current month. */
 async function confirmDeleteMonth() {
   const label = document.getElementById('month-label').textContent.trim();
-
   const confirmed = await showConfirm(
     `This will permanently remove all income, savings goal, expenses and AI review for ${label}. This cannot be undone.`,
     'Delete Month'
@@ -463,10 +596,6 @@ async function confirmDeleteMonth() {
   if (confirmed) deleteCurrentMonth();
 }
 
-/**
- * Deletes the current month's plan from Supabase and clears it from local state.
- * If the deleted month is not the real current month, snaps back to today silently.
- */
 async function deleteCurrentMonth() {
   const key = currentKey();
   if (!currentUser) return;
@@ -491,6 +620,9 @@ async function deleteCurrentMonth() {
     if (error) throw error;
 
     delete state.months[key];
+
+    // Also remove plan_savings for this month from local state
+    planSavings = planSavings.filter(p => p.month_key !== key);
 
     if (btn) {
       btn.textContent = '🗑️';
@@ -519,10 +651,9 @@ async function deleteCurrentMonth() {
 // PANEL HELPER
 // ─────────────────────────────────────────
 
-/** Opens a panel overlay and optionally focuses an input inside it. */
 function openPanel(overlayId, focusId) {
   document.getElementById(overlayId).classList.add('open');
-  document.body.style.overflow = 'hidden'; // 🔒 lock scroll
+  document.body.style.overflow = 'hidden';
   if (focusId) {
     setTimeout(() => document.getElementById(focusId).focus(), FOCUS_DELAY);
   }
@@ -532,7 +663,6 @@ function openPanel(overlayId, focusId) {
 // INCOME PANEL
 // ─────────────────────────────────────────
 
-/** Opens the income panel for a normal edit. Cancel will simply close the panel. */
 function openIncomePanel() {
   const data = currentMonthData();
   document.getElementById('panel-income').value = data.income || '';
@@ -541,10 +671,6 @@ function openIncomePanel() {
   openPanel('income-panel-overlay', 'panel-income');
 }
 
-/**
- * Validates and saves the income value, then either prompts for a savings goal
- * (if not yet set) or renders the full planner.
- */
 function saveIncomePanel() {
   const val = parseFloat(document.getElementById('panel-income').value);
   if (!val || val <= 0) { alert('Please enter a valid income amount.'); return; }
@@ -562,14 +688,9 @@ function saveIncomePanel() {
   }
 }
 
-/**
- * Cancels the income panel. If opened from the new-month flow, routes back to
- * the defaults prompt instead of closing silently.
- */
 function cancelIncomePanel() {
   const overlay = document.getElementById('income-panel-overlay');
   closePanel('income-panel-overlay');
-
   if (overlay._fromNewMonthFlow) {
     overlay._fromNewMonthFlow = false;
     checkAndPromptMonth();
@@ -580,10 +701,6 @@ function cancelIncomePanel() {
 // GOAL PANEL
 // ─────────────────────────────────────────
 
-/**
- * Opens the savings goal panel in mandatory mode after income is set for the first time.
- * The cancel button is hidden and backdrop dismissal is blocked until a valid goal is entered.
- */
 function openGoalPanelMandatory() {
   document.getElementById('panel-goal').value = '';
 
@@ -601,14 +718,12 @@ function openGoalPanelMandatory() {
   openPanel('goal-panel-overlay', 'panel-goal');
 }
 
-/** Opens the savings goal panel for a normal edit. */
 function openGoalPanel() {
   const data = currentMonthData();
   document.getElementById('panel-goal').value = data.savingsGoal ?? '';
   openPanel('goal-panel-overlay', 'panel-goal');
 }
 
-/** Validates and saves the savings goal, then restores the panel to its normal (non-mandatory) state. */
 function saveGoalPanel() {
   const val = Math.min(100, Math.max(0,
     parseFloat(document.getElementById('panel-goal').value) || 0));
@@ -633,13 +748,11 @@ function saveGoalPanel() {
 // DEFAULT INCOME PANEL
 // ─────────────────────────────────────────
 
-/** Opens the default income panel pre-filled with the current default income. */
 function openDefaultIncomePanel() {
   document.getElementById('panel-default-income').value = state.defaults.income || '';
   openPanel('default-income-panel-overlay', 'panel-default-income');
 }
 
-/** Saves the updated default income to state and Supabase, then re-renders the defaults tab. */
 async function saveDefaultIncomePanel() {
   state.defaults.income = parseFloat(document.getElementById('panel-default-income').value) || 0;
   closePanel('default-income-panel-overlay');
@@ -651,13 +764,11 @@ async function saveDefaultIncomePanel() {
 // DEFAULT GOAL PANEL
 // ─────────────────────────────────────────
 
-/** Opens the default savings goal panel pre-filled with the current default goal. */
 function openDefaultGoalPanel() {
   document.getElementById('panel-default-goal').value = state.defaults.savingsGoal || '';
   openPanel('default-goal-panel-overlay', 'panel-default-goal');
 }
 
-/** Saves the updated default savings goal to state and Supabase, then re-renders the defaults tab. */
 async function saveDefaultGoalPanel() {
   state.defaults.savingsGoal = Math.min(100, Math.max(0,
     parseFloat(document.getElementById('panel-default-goal').value) || 0));
@@ -670,7 +781,6 @@ async function saveDefaultGoalPanel() {
 // DEFAULTS TAB
 // ─────────────────────────────────────────
 
-/** Renders the current default income and savings goal values into the defaults tab. */
 function renderDefaultsTab() {
   document.getElementById('defaults-income-display').textContent =
     state.defaults.income > 0 ? fmt(state.defaults.income) : 'Not set';
@@ -684,7 +794,6 @@ function renderDefaultsTab() {
 
 let editingRecurringId = null;
 
-/** Opens the recurring item panel for adding (no id) or editing (with id). */
 function openRecurringPanel(id) {
   editingRecurringId = id || null;
   const title   = document.getElementById('recurring-panel-title');
@@ -707,7 +816,6 @@ function openRecurringPanel(id) {
   openPanel('recurring-panel-overlay', 'panel-rec-name');
 }
 
-/** Validates and saves the recurring item panel — inserts or updates in Supabase accordingly. */
 async function saveRecurringPanel() {
   const name   = document.getElementById('panel-rec-name').value.trim();
   const amount = parseFloat(document.getElementById('panel-rec-amount').value);
@@ -715,13 +823,13 @@ async function saveRecurringPanel() {
   if (!amount || amount <= 0) { alert('Please enter a valid amount.'); return; }
 
   if (editingRecurringId) {
-    const item = state.recurringItems.find(r => String(r.id) === String(editingRecurringId)); // ✅ safe compare
+    const item = state.recurringItems.find(r => String(r.id) === String(editingRecurringId));
     if (item) { item.name = name; item.amount = amount; }
     await saveRecurringItem({ id: editingRecurringId, name, amount });
   } else {
     const realId = await saveRecurringItem({ name, amount, _isNew: true });
     if (realId) {
-      state.recurringItems.push({ id: String(realId), name, amount }); // ✅ always store as string
+      state.recurringItems.push({ id: String(realId), name, amount });
     }
   }
 
@@ -729,7 +837,6 @@ async function saveRecurringPanel() {
   renderRecurringMasterList();
 }
 
-/** Confirms and deletes a recurring item from Supabase and local state. */
 async function deleteRecurringItem(id) {
   const item = state.recurringItems.find(r => r.id == id);
   const name = item ? `"${item.name}"` : 'this item';
@@ -742,14 +849,6 @@ async function deleteRecurringItem(id) {
   renderRecurringMasterList();
 }
 
-/**
- * Renders the full recurring master list into the recurring tab.
- *
- * FIX: item.id is a Supabase UUID/integer — it must be quoted in the onclick
- * attribute string so the browser parses it as a JS string argument, not a
- * bare identifier. Without quotes, onclick="openRecurringPanel(abc-123)" is
- * invalid JS and the click handler silently does nothing.
- */
 function renderRecurringMasterList() {
   const el = document.getElementById('recurring-master-list');
 
@@ -774,21 +873,6 @@ function renderRecurringMasterList() {
 // SAVINGS CATEGORIES
 // ─────────────────────────────────────────
 
-async function fetchSavingsCategories() {
-  const { data, error } = await sb
-    .from('savings_categories')
-    .select('*')
-    .order('created_at', { ascending: true });
-
-  if (error) {
-    console.error('Error fetching savings categories:', error);
-    return;
-  }
-
-  savingsCategories = data || [];
-  renderSavingsCategoriesList();
-}
-
 async function addSavingsCategory(name, monthlyAmount, goalAmount) {
   showToast('saving');
 
@@ -803,10 +887,7 @@ async function addSavingsCategory(name, monthlyAmount, goalAmount) {
     .select()
     .single();
 
-  if (error) {
-    console.error('Error adding savings category:', error);
-    return;
-  }
+  if (error) { console.error('Error adding savings category:', error); return; }
 
   savingsCategories.push(data);
   renderSavingsCategoriesList();
@@ -826,10 +907,7 @@ async function updateSavingsCategory(id, name, monthlyAmount, goalAmount) {
     .eq('id', id)
     .eq('user_id', currentUser.id);
 
-  if (error) {
-    console.error('Error updating savings category:', error);
-    return;
-  }
+  if (error) { console.error('Error updating savings category:', error); return; }
 
   const index = savingsCategories.findIndex(c => c.id === id);
   if (index !== -1) {
@@ -847,7 +925,7 @@ async function updateSavingsCategory(id, name, monthlyAmount, goalAmount) {
 
 async function deleteSavingsCategory(id) {
   const confirmed = await showConfirm(
-    'Delete this savings category? All monthly allocations for this category will also be removed.',
+    'Delete this savings category? All adjustments and monthly allocations for this category will also be removed.',
     'Delete'
   );
   if (!confirmed) return;
@@ -858,15 +936,19 @@ async function deleteSavingsCategory(id) {
     .eq('id', id)
     .eq('user_id', currentUser.id);
 
-  if (error) {
-    console.error('Error deleting savings category:', error);
-    return;
-  }
+  if (error) { console.error('Error deleting savings category:', error); return; }
 
-  savingsCategories = savingsCategories.filter(c => c.id !== id);
+  savingsCategories      = savingsCategories.filter(c => c.id !== id);
+  savingsAdjustments     = savingsAdjustments.filter(a => a.savings_category_id !== id);
+  planSavings            = planSavings.filter(p => p.savings_category_id !== id);
+
   renderSavingsCategoriesList();
   showToast('saved');
 }
+
+// ─────────────────────────────────────────
+// SAVINGS CATEGORIES — RENDER
+// ─────────────────────────────────────────
 
 function renderSavingsCategoriesList() {
   const container = document.getElementById('savings-categories-list');
@@ -880,17 +962,100 @@ function renderSavingsCategoriesList() {
     return;
   }
 
-  container.innerHTML = savingsCategories.map(cat => `
-    <div class="recurring-list-item">
-      <span class="recurring-item-name">${escHtml(cat.name)}</span>
-      <span class="recurring-item-amount">${fmt(cat.monthly_amount)}/mo · Goal: ${fmt(cat.goal_amount)}</span>
-      <div class="item-actions">
-        <button class="item-action-btn edit" onclick="openEditSavingsCategoryModal('${cat.id}')" title="Edit">✎</button>
-        <button class="item-action-btn del"  onclick="deleteSavingsCategory('${cat.id}')" title="Delete">✕</button>
+  container.innerHTML = savingsCategories.map(cat => {
+    const totalSaved  = calcCategoryTotalSaved(cat);
+    const goalAmount  = Number(cat.goal_amount);
+    const pct         = goalAmount > 0 ? Math.min(100, (totalSaved / goalAmount) * 100) : 0;
+    const adjustments = getAdjustmentsForCategory(cat.id);
+    const adjSum      = sumAdjustments(cat.id);
+
+    // Progress bar colour
+    const barClass = pct >= 100 ? 'met' : pct >= 70 ? 'close' : 'under';
+
+    // Adjustment log rows
+    const adjRows = adjustments.length > 0
+      ? adjustments.map(a => `
+          <div class="savings-adj-row">
+            <span class="savings-adj-amount ${Number(a.amount) >= 0 ? 'positive' : 'negative'}">
+              ${Number(a.amount) >= 0 ? '+' : ''}${fmt(a.amount)}
+            </span>
+            <span class="savings-adj-note">${escHtml(a.note || '—')}</span>
+            <span class="savings-adj-date">${fmtDate(a.created_at)}</span>
+            <button class="item-action-btn del"
+                    onclick="deleteSavingsAdjustment('${cat.id}', '${a.id}')"
+                    title="Delete adjustment">✕</button>
+          </div>
+        `).join('')
+      : '<div class="savings-adj-empty">No adjustments yet.</div>';
+
+    return `
+      <div class="savings-cat-card">
+
+        <!-- Header row -->
+        <div class="savings-cat-header">
+          <span class="savings-cat-name">${escHtml(cat.name)}</span>
+          <div class="item-actions">
+            <button class="item-action-btn edit"
+                    onclick="openEditSavingsCategoryModal('${cat.id}')" title="Edit">✎</button>
+            <button class="item-action-btn del"
+                    onclick="deleteSavingsCategory('${cat.id}')" title="Delete">✕</button>
+          </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="savings-cat-stats">
+          <div class="savings-stat-item">
+            <span class="savings-stat-label">Monthly</span>
+            <span class="savings-stat-value">${fmt(cat.monthly_amount)}/mo</span>
+          </div>
+          <div class="savings-stat-item">
+            <span class="savings-stat-label">Total Saved</span>
+            <span class="savings-stat-value accent">${fmt(totalSaved)}</span>
+          </div>
+          <div class="savings-stat-item">
+            <span class="savings-stat-label">Goal</span>
+            <span class="savings-stat-value">${fmt(goalAmount)}</span>
+          </div>
+          ${adjSum !== 0 ? `
+          <div class="savings-stat-item">
+            <span class="savings-stat-label">Adjustments</span>
+            <span class="savings-stat-value ${adjSum >= 0 ? 'positive' : 'negative'}">
+              ${adjSum >= 0 ? '+' : ''}${fmt(adjSum)}
+            </span>
+          </div>` : ''}
+        </div>
+
+        <!-- Progress bar -->
+        <div class="savings-progress-wrap">
+          <div class="savings-progress-labels">
+            <span>${fmt(totalSaved)} saved</span>
+            <span>${pct.toFixed(1)}% of ${fmt(goalAmount)}</span>
+          </div>
+          <div class="savings-progress-track">
+            <div class="savings-progress-fill ${barClass}" style="width:${pct}%"></div>
+          </div>
+        </div>
+
+        <!-- Adjustment log -->
+        <div class="savings-adj-section">
+          <div class="savings-adj-header">
+            <span class="savings-adj-title">📋 Adjustment Log</span>
+            <button class="btn btn-primary btn-sm"
+                    onclick="openSavingsAdjustmentModal('${cat.id}')">+ Add Adjustment</button>
+          </div>
+          <div class="savings-adj-list">
+            ${adjRows}
+          </div>
+        </div>
+
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
+
+// ─────────────────────────────────────────
+// SAVINGS CATEGORY MODAL
+// ─────────────────────────────────────────
 
 function openAddSavingsCategoryModal() {
   document.getElementById('savings-category-modal-title').textContent = 'Add Savings Category';
@@ -923,33 +1088,234 @@ async function submitSavingsCategoryModal() {
   const monthlyAmount = document.getElementById('savings-category-monthly').value;
   const goalAmount    = document.getElementById('savings-category-goal').value;
 
-  if (!name) {
-    alert('Please enter a category name.');
-    return;
-  }
+  if (!name) { alert('Please enter a category name.'); return; }
   if (isNaN(parseFloat(monthlyAmount)) || parseFloat(monthlyAmount) < 0) {
-    alert('Please enter a valid monthly amount.');
-    return;
+    alert('Please enter a valid monthly amount.'); return;
   }
   if (isNaN(parseFloat(goalAmount)) || parseFloat(goalAmount) <= 0) {
-    alert('Please enter a valid goal amount.');
+    alert('Please enter a valid goal amount.'); return;
+  }
+
+  if (id) await updateSavingsCategory(id, name, monthlyAmount, goalAmount);
+  else    await addSavingsCategory(name, monthlyAmount, goalAmount);
+
+  closeSavingsCategoryModal();
+}
+
+// ─────────────────────────────────────────
+// SAVINGS ADJUSTMENTS — MODAL
+// ─────────────────────────────────────────
+
+function openSavingsAdjustmentModal(categoryId) {
+  const cat = savingsCategories.find(c => c.id === categoryId);
+  document.getElementById('savings-adjustment-modal-title').textContent =
+    cat ? `Add Adjustment — ${cat.name}` : 'Add Adjustment';
+  document.getElementById('savings-adjustment-category-id').value = categoryId;
+  document.getElementById('savings-adjustment-amount').value      = '';
+  document.getElementById('savings-adjustment-note').value        = '';
+  openPanel('savings-adjustment-modal', 'savings-adjustment-amount');
+}
+
+async function submitSavingsAdjustment() {
+  const categoryId = document.getElementById('savings-adjustment-category-id').value;
+  const amountRaw  = document.getElementById('savings-adjustment-amount').value;
+  const note       = document.getElementById('savings-adjustment-note').value.trim();
+  const amount     = parseFloat(amountRaw);
+
+  if (isNaN(amount) || amount === 0) {
+    alert('Please enter a non-zero amount. Use a negative number for withdrawals.');
     return;
   }
 
-  if (id) {
-    await updateSavingsCategory(id, name, monthlyAmount, goalAmount);
-  } else {
-    await addSavingsCategory(name, monthlyAmount, goalAmount);
+  const result = await insertSavingsAdjustment(categoryId, amount, note);
+  if (result) {
+    closePanel('savings-adjustment-modal');
+    renderSavingsCategoriesList();
+  }
+}
+
+async function deleteSavingsAdjustment(categoryId, adjustmentId) {
+  const confirmed = await showConfirm('Remove this adjustment entry?', 'Remove');
+  if (!confirmed) return;
+
+  const ok = await deleteSavingsAdjustmentFromDB(adjustmentId);
+  if (ok) renderSavingsCategoriesList();
+}
+
+// ─────────────────────────────────────────
+// PLAN SAVINGS — ALLOCATION SECTION
+// ─────────────────────────────────────────
+
+/**
+ * Toggles the savings allocation form in the Plan tab.
+ * Populates the category dropdown with unallocated categories for this month.
+ */
+function togglePlanSavingsForm() {
+  const form = document.getElementById('plan-savings-form');
+  const isVisible = form.style.display !== 'none';
+
+  if (isVisible) {
+    form.style.display = 'none';
+    return;
   }
 
-  closeSavingsCategoryModal();
+  // Populate dropdown — only show categories not yet allocated this month
+  const allocated    = getPlanSavingsForCurrentMonth().map(p => p.savings_category_id);
+  const available    = savingsCategories.filter(c => !allocated.includes(c.id));
+  const select       = document.getElementById('plan-savings-category-select');
+  const amountInput  = document.getElementById('plan-savings-amount');
+  const hintInput    = document.getElementById('plan-savings-monthly-hint');
+
+  if (available.length === 0) {
+    alert('All savings categories are already allocated for this month.');
+    return;
+  }
+
+  select.innerHTML = `<option value="">— Select a category —</option>` +
+    available.map(c => `<option value="${c.id}">${escHtml(c.name)}</option>`).join('');
+
+  amountInput.value = '';
+  hintInput.value   = '';
+  form.style.display = '';
+}
+
+/**
+ * Auto-fills the amount field with the category's monthly_amount when selected.
+ */
+function onPlanSavingsCategoryChange() {
+  const select     = document.getElementById('plan-savings-category-select');
+  const amountInput = document.getElementById('plan-savings-amount');
+  const hintInput  = document.getElementById('plan-savings-monthly-hint');
+  const cat        = savingsCategories.find(c => c.id === select.value);
+
+  if (cat) {
+    amountInput.value = cat.monthly_amount;
+    hintInput.value   = fmt(cat.monthly_amount);
+  } else {
+    amountInput.value = '';
+    hintInput.value   = '';
+  }
+}
+
+/**
+ * Validates and saves a new savings allocation for the current month.
+ */
+async function addPlanSavingsAllocation() {
+  const select     = document.getElementById('plan-savings-category-select');
+  const amountInput = document.getElementById('plan-savings-amount');
+  const categoryId = select.value;
+  const amount     = parseFloat(amountInput.value);
+
+  if (!categoryId) { alert('Please select a savings category.'); return; }
+  if (isNaN(amount) || amount <= 0) { alert('Please enter a valid amount.'); return; }
+
+  const result = await upsertPlanSavings(categoryId, amount);
+  if (result) {
+    document.getElementById('plan-savings-form').style.display = 'none';
+    renderPlanSavingsSection();
+  }
+}
+
+/**
+ * Deletes a plan savings allocation row.
+ */
+async function deletePlanSavingsAllocation(id) {
+  const confirmed = await showConfirm('Remove this savings allocation for this month?', 'Remove');
+  if (!confirmed) return;
+
+  const ok = await deletePlanSavingsFromDB(id);
+  if (ok) renderPlanSavingsSection();
+}
+
+/**
+ * Opens an inline edit for a plan savings allocation amount.
+ */
+async function editPlanSavingsAllocation(id) {
+  const row = planSavings.find(p => p.id === id);
+  if (!row) return;
+
+  const cat        = savingsCategories.find(c => c.id === row.savings_category_id);
+  const catName    = cat ? cat.name : 'this category';
+  const newAmount  = parseFloat(prompt(`Edit allocated amount for "${catName}":`, row.allocated_amount));
+
+  if (isNaN(newAmount) || newAmount <= 0) { alert('Please enter a valid amount.'); return; }
+
+  await upsertPlanSavings(row.savings_category_id, newAmount);
+  renderPlanSavingsSection();
+}
+
+/**
+ * Renders the savings allocation section in the Plan tab.
+ * Shows current allocations, a summary row, and a warning if over-allocated.
+ */
+function renderPlanSavingsSection() {
+  const listEl      = document.getElementById('plan-savings-list');
+  const totalEl     = document.getElementById('plan-savings-total');
+  const warningEl   = document.getElementById('plan-savings-warning');
+  const summaryEl   = document.getElementById('plan-savings-summary');
+  const summaryText = document.getElementById('plan-savings-summary-text');
+
+  if (!listEl) return;
+
+  const allocations    = getPlanSavingsForCurrentMonth();
+  const totalAllocated = getTotalAllocatedForCurrentMonth();
+  const { savings }    = calcTotals();
+
+  totalEl.textContent = fmt(totalAllocated);
+
+  // Warning banner
+  if (totalAllocated > savings && savings > 0) {
+    warningEl.style.display = '';
+  } else {
+    warningEl.style.display = 'none';
+  }
+
+  // Summary row
+  if (allocations.length > 0) {
+    summaryEl.style.display = '';
+    const remaining = savings - totalAllocated;
+    const isOver    = remaining < 0;
+    summaryText.innerHTML = `
+      <span>Allocated: <strong>${fmt(totalAllocated)}</strong></span>
+      <span style="margin:0 8px;color:var(--border)">|</span>
+      <span>Projected Savings: <strong>${fmt(savings)}</strong></span>
+      <span style="margin:0 8px;color:var(--border)">|</span>
+      <span style="color:${isOver ? 'var(--danger)' : 'var(--accent2)'}">
+        ${isOver ? '⚠️ Over by ' + fmt(Math.abs(remaining)) : '✅ Remaining: ' + fmt(remaining)}
+      </span>
+    `;
+  } else {
+    summaryEl.style.display = 'none';
+  }
+
+  // Allocation rows
+  if (allocations.length === 0) {
+    listEl.innerHTML = '<div class="empty-subsection">No savings allocated for this month yet.</div>';
+    return;
+  }
+
+  listEl.innerHTML = allocations.map(p => {
+    const cat = savingsCategories.find(c => c.id === p.savings_category_id);
+    const catName = cat ? escHtml(cat.name) : 'Unknown Category';
+    return `
+      <div class="item-row">
+        <span class="item-name">${catName}</span>
+        <span class="item-amount">${fmt(p.allocated_amount)}</span>
+        <div class="item-actions">
+          <button class="item-action-btn edit"
+                  onclick="editPlanSavingsAllocation('${p.id}')" title="Edit">✎</button>
+          <button class="item-action-btn del"
+                  onclick="deletePlanSavingsAllocation('${p.id}')" title="Remove">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 // ─────────────────────────────────────────
 // ADD ITEM FORM
 // ─────────────────────────────────────────
 
-/** Toggles the add item form for a given category (needs/wants). */
 function toggleAddForm(cat) {
   const wrapper = document.getElementById(`add-form-${cat}`);
   const visible = wrapper.style.display !== 'none';
@@ -958,7 +1324,6 @@ function toggleAddForm(cat) {
   renderAddForm(cat);
 }
 
-/** Renders the add item form HTML for a given category, including the recurring picker if applicable. */
 function renderAddForm(cat) {
   const inner            = document.getElementById(`add-form-${cat}-inner`);
   const hasRecurring     = state.recurringItems.length > 0;
@@ -990,7 +1355,8 @@ function renderAddForm(cat) {
     <div class="form-row two">
       <div class="form-field">
         <label class="form-label">Item Name</label>
-        <input class="form-input" id="${cat}-name" placeholder="e.g. ${cat === 'needs' ? 'Rent' : 'Netflix'}" />
+        <input class="form-input" id="${cat}-name"
+               placeholder="e.g. ${cat === 'needs' ? 'Rent' : 'Netflix'}" />
       </div>
       <div class="form-field">
         <label class="form-label">Amount (RM)</label>
@@ -1010,7 +1376,6 @@ function renderAddForm(cat) {
   `;
 }
 
-/** Shows or hides the recurring picker and funded checkbox based on the selected item type. */
 function handleTypeChange(cat) {
   const type       = document.getElementById(`${cat}-type`).value;
   const picker     = document.getElementById(`${cat}-recurring-picker`);
@@ -1038,7 +1403,6 @@ function handleTypeChange(cat) {
   }
 }
 
-/** Auto-fills the item name and amount fields from the selected recurring item. */
 function fillFromRecurring(cat) {
   const sel  = document.getElementById(`${cat}-recurring-select`);
   const id   = sel.value;
@@ -1049,7 +1413,6 @@ function fillFromRecurring(cat) {
   document.getElementById(`${cat}-amount`).value = item.amount;
 }
 
-/** Validates and adds a new item to the current month plan, then saves. */
 function addItem(cat) {
   const name     = document.getElementById(`${cat}-name`).value.trim();
   const amount   = parseFloat(document.getElementById(`${cat}-amount`).value);
@@ -1072,7 +1435,6 @@ function addItem(cat) {
 // DELETE ITEM
 // ─────────────────────────────────────────
 
-/** Removes an item from the current month plan by ID and saves. */
 async function deleteItem(id) {
   const data = currentMonthData();
   const item = data.items.find(i => i.id === id);
@@ -1090,7 +1452,6 @@ async function deleteItem(id) {
 // EDIT ITEM PANEL
 // ─────────────────────────────────────────
 
-/** Opens the edit item panel pre-filled with the selected item's current values. */
 function openEditItemPanel(id) {
   const data = currentMonthData();
   const item = data.items.find(i => i.id === id);
@@ -1107,7 +1468,6 @@ function openEditItemPanel(id) {
   openPanel('edit-item-panel-overlay', 'edit-item-name');
 }
 
-/** Shows or hides the funded checkbox in the edit panel based on category and type. */
 function toggleEditFundedField() {
   const cat  = document.getElementById('edit-item-category').value;
   const type = document.getElementById('edit-item-type').value;
@@ -1116,7 +1476,6 @@ function toggleEditFundedField() {
   if (!show) document.getElementById('edit-item-funded').checked = false;
 }
 
-/** Validates and saves edits to an existing plan item, then re-renders and saves. */
 function saveEditItem() {
   const id     = document.getElementById('edit-item-id').value;
   const name   = document.getElementById('edit-item-name').value.trim();
@@ -1131,7 +1490,13 @@ function saveEditItem() {
 
   const data = currentMonthData();
   const item = data.items.find(i => i.id === id);
-  if (item) { item.name = name; item.amount = amount; item.category = cat; item.type = type; item.funded = funded; }
+  if (item) {
+    item.name     = name;
+    item.amount   = amount;
+    item.category = cat;
+    item.type     = type;
+    item.funded   = funded;
+  }
 
   closePanel('edit-item-panel-overlay');
   render();
@@ -1142,10 +1507,6 @@ function saveEditItem() {
 // CALCULATIONS
 // ─────────────────────────────────────────
 
-/**
- * Calculates all financial totals for the current month.
- * Returns needs, wants, funded, gross, savings, savingsPct, expensesPct, and income.
- */
 function calcTotals() {
   const data  = currentMonthData();
   const items = data.items || [];
@@ -1166,14 +1527,6 @@ function calcTotals() {
 // RENDER — PLAN TAB
 // ─────────────────────────────────────────
 
-/**
- * Builds an HTML string for a single plan item row, used by renderItemList.
- *
- * FIX: item.id is a UUID string — it must be wrapped in single quotes inside
- * the onclick attribute so the browser parses it as a JS string argument.
- * Without quotes, onclick="openEditItemPanel(550e8400-e29b-...)" is invalid
- * JS (the hyphens are parsed as subtraction) and the handler silently fails.
- */
 function buildItemRowHTML(item) {
   return `
     <div class="item-row">
@@ -1188,10 +1541,6 @@ function buildItemRowHTML(item) {
   `;
 }
 
-/**
- * Renders the full planner view for the current month.
- * Exits early if no income is set.
- */
 function render() {
   const data = currentMonthData();
 
@@ -1232,6 +1581,9 @@ function render() {
   document.getElementById('needs-total').textContent = fmt(needsTotal);
   document.getElementById('wants-total').textContent = fmt(wantsTotal);
 
+  // Render savings allocation section
+  renderPlanSavingsSection();
+
   const monthData = state.months[currentKey()];
   const hasData   = monthData && (
     monthData.income      > 0 ||
@@ -1243,7 +1595,6 @@ function render() {
   if (deleteBtn) deleteBtn.classList.toggle('hidden', !hasData);
 }
 
-/** Renders the total expenses progress bar and breakdown below the income display. */
 function renderTotalExpensesBar(needs, wants, funded, gross, expensesPct, income) {
   const card = document.getElementById('total-expenses-card');
   if (needs + wants + funded === 0) { card.style.display = 'none'; return; }
@@ -1275,7 +1626,6 @@ function renderTotalExpensesBar(needs, wants, funded, gross, expensesPct, income
   document.getElementById('total-exp-income-label').textContent = `of ${fmt(income)}`;
 }
 
-/** Renders the savings goal progress bar and status message. */
 function renderGoalBar(savingsPct, goal, income) {
   const wrap = document.getElementById('goal-bar-wrap');
   if (!goal || !income) { wrap.style.display = 'none'; return; }
@@ -1309,7 +1659,6 @@ function renderGoalBar(savingsPct, goal, income) {
   }
 }
 
-/** Renders the list of items for a given category and type (recurring/oneoff). */
 function renderItemList(cat, type) {
   const listEl = document.getElementById(`${cat}-${type}-list`);
   const data   = currentMonthData();
@@ -1327,7 +1676,6 @@ function renderItemList(cat, type) {
 // RENDER — HISTORY TAB
 // ─────────────────────────────────────────
 
-/** Renders the history grid with a summary card for each month that has a plan. */
 function renderHistory() {
   const grid    = document.getElementById('history-grid');
   const entries = Object.entries(state.months)
@@ -1369,7 +1717,6 @@ function renderHistory() {
   }).join('');
 }
 
-/** Opens the history detail modal for a given month key. */
 function openHistoryModal(key) {
   const data = state.months[key];
   if (!data) return;
@@ -1425,22 +1772,19 @@ function openHistoryModal(key) {
   `;
 
   document.getElementById('history-modal').classList.add('open');
-  document.body.style.overflow = 'hidden'; // 🔒 lock scroll
+  document.body.style.overflow = 'hidden';
 }
 
-/** Toggles a collapsible section open or closed. */
 function toggleCollapsible(header) {
   header.querySelector('.collapsible-arrow').classList.toggle('open');
   header.nextElementSibling.classList.toggle('open');
 }
 
-/** Closes the history detail modal. */
 function closeHistoryModal() {
   document.getElementById('history-modal').classList.remove('open');
-  document.body.style.overflow = ''; // 🔓 unlock scroll
+  document.body.style.overflow = '';
 }
 
-/** Closes the history modal when the user clicks the backdrop. */
 function handleModalOverlayClick(e) {
   if (e.target === document.getElementById('history-modal')) closeHistoryModal();
 }
@@ -1449,16 +1793,11 @@ function handleModalOverlayClick(e) {
 // PANEL HELPERS
 // ─────────────────────────────────────────
 
-/** Closes a panel overlay by removing the 'open' class. */
 function closePanel(id) {
   document.getElementById(id).classList.remove('open');
-  document.body.style.overflow = ''; // 🔓 unlock scroll
+  document.body.style.overflow = '';
 }
 
-/**
- * Shows a custom confirmation modal and returns a Promise<boolean>.
- * Resolves true if the user confirms, false if they cancel.
- */
 function showConfirm(message, confirmText = 'Delete') {
   return new Promise(resolve => {
     document.getElementById('confirm-modal-message').textContent = message;
@@ -1468,7 +1807,6 @@ function showConfirm(message, confirmText = 'Delete') {
     const okBtn     = document.getElementById('confirm-modal-ok');
     const cancelBtn = document.getElementById('confirm-modal-cancel');
 
-    // Clean up old listeners before adding new ones
     const freshOk     = okBtn.cloneNode(true);
     const freshCancel = cancelBtn.cloneNode(true);
     okBtn.replaceWith(freshOk);
@@ -1488,11 +1826,6 @@ function showConfirm(message, confirmText = 'Delete') {
   });
 }
 
-/**
- * Handles backdrop clicks on panel overlays.
- * Mandatory panels (e.g. goal after income entry) cannot be dismissed this way.
- * The income panel routes through cancelIncomePanel to handle new-month flow correctly.
- */
 function handlePanelOverlayClick(e, id) {
   const overlay = document.getElementById(id);
   if (overlay._mandatory) return;
@@ -1509,7 +1842,6 @@ function handlePanelOverlayClick(e, id) {
 // AI REVIEW
 // ─────────────────────────────────────────
 
-/** Builds the AI prompt, calls the Groq API, and displays the coach's advice. */
 async function runAIReview() {
   const data = currentMonthData();
   if (!data.income) { alert('Please set your expected income first.'); return; }
@@ -1600,7 +1932,6 @@ Keep the tone warm, coach-like, and honest. Format clearly with short paragraphs
   }
 }
 
-/** Renders the AI coach's advice into the review card. */
 function showAIResult(text) {
   const card    = document.getElementById('ai-review-card');
   const content = document.getElementById('ai-review-content');
@@ -1614,7 +1945,6 @@ function showAIResult(text) {
   `;
 }
 
-/** Hides the AI review card and clears its content. */
 function resetAIReviewUI() {
   document.getElementById('ai-review-card').style.display = 'none';
   document.getElementById('ai-review-content').innerHTML  = '';
@@ -1624,7 +1954,6 @@ function resetAIReviewUI() {
 // PASSWORD TOGGLE
 // ─────────────────────────────────────────
 
-/** Toggles password visibility on the auth form. */
 document.addEventListener('DOMContentLoaded', () => {
   const toggleBtn     = document.getElementById('toggle-password');
   const passwordInput = document.getElementById('auth-password');
@@ -1634,29 +1963,24 @@ document.addEventListener('DOMContentLoaded', () => {
   if (toggleBtn && passwordInput) {
     toggleBtn.addEventListener('click', () => {
       if (passwordInput.type === 'password') {
-        passwordInput.type        = 'text';
-        eyeOpen.style.display     = 'none';
-        eyeClosed.style.display   = '';
+        passwordInput.type      = 'text';
+        eyeOpen.style.display   = 'none';
+        eyeClosed.style.display = '';
       } else {
-        passwordInput.type        = 'password';
-        eyeOpen.style.display     = '';
-        eyeClosed.style.display   = 'none';
+        passwordInput.type      = 'password';
+        eyeOpen.style.display   = '';
+        eyeClosed.style.display = 'none';
       }
     });
   }
 });
 
-// ─────────────────────────────────────────
-// PASSWORD TOGGLE — RESET HELPER
-// ─────────────────────────────────────────
-
-/** Resets the password field and toggle icon back to the default hidden state. */
 function resetPasswordToggle() {
   const passwordInput = document.getElementById('auth-password');
   const eyeOpen       = document.getElementById('icon-eye-open');
   const eyeClosed     = document.getElementById('icon-eye-closed');
 
-  if (passwordInput) passwordInput.type    = 'password';
-  if (eyeOpen)       eyeOpen.style.display = '';
+  if (passwordInput) passwordInput.type      = 'password';
+  if (eyeOpen)       eyeOpen.style.display   = '';
   if (eyeClosed)     eyeClosed.style.display = 'none';
 }
