@@ -731,6 +731,44 @@
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════════
+       EDIT PLAN SAVINGS ALLOCATION PANEL
+  ══════════════════════════════════════════ -->
+  <div class="panel-overlay" id="edit-plan-savings-panel-overlay"
+       onclick="handlePanelOverlayClick(event, 'edit-plan-savings-panel-overlay')">
+    <div class="panel-box">
+      <div class="panel-title">Edit Savings Allocation ✏️</div>
+      <div class="panel-subtitle" id="edit-plan-savings-subtitle">
+        Update the allocated amount for this category.
+      </div>
+  
+      <input type="hidden" id="edit-plan-savings-id" />
+  
+      <div class="panel-field">
+        <label class="panel-label">Category</label>
+        <input class="panel-input" id="edit-plan-savings-cat-name"
+               type="text" disabled
+               style="color:var(--text-muted); cursor:not-allowed;" />
+      </div>
+  
+      <div class="panel-field">
+        <label class="panel-label">Allocated Amount (RM)</label>
+        <div class="currency-wrap">
+          <span class="currency-prefix">RM</span>
+          <input class="panel-input" id="edit-plan-savings-amount"
+                 type="number" placeholder="0.00" min="0" step="0.01" />
+        </div>
+      </div>
+  
+      <div class="panel-actions">
+        <button class="btn btn-secondary"
+                onclick="closePanel('edit-plan-savings-panel-overlay')">Cancel</button>
+        <button class="btn btn-primary"
+                onclick="saveEditPlanSavingsAllocation()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
 </template>
 
 <!-- 1. Supabase SDK -->
