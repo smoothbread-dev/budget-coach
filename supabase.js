@@ -120,10 +120,11 @@ function showAuth() {
   document.getElementById('auth-toggle-btn').textContent = "Don't have an account? Sign Up";
   document.getElementById('auth-error').style.display    = 'none';
 
-  // NEW: clear info box on auth reset
   document.getElementById('auth-info').style.display = 'none';
   document.getElementById('resend-btn').classList.add('bc-hidden');
 
+  resetPasswordToggle();
+  
   const app = document.getElementById('app');
   app.style.display = 'none';
   app.innerHTML     = '';
@@ -149,6 +150,8 @@ document.getElementById('auth-toggle-btn').addEventListener('click', () => {
 
   document.getElementById('auth-email').value    = '';
   document.getElementById('auth-password').value = '';
+
+  resetPasswordToggle();
 });
 
 // ─────────────────────────────────────────
