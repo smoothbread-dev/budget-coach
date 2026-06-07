@@ -850,6 +850,28 @@ body {
   align-items:   center;
 }
 
+.plan-savings-summary-row {
+  display:         flex;
+  flex-wrap:       wrap;
+  gap:             10px 20px;
+  width:           100%;
+}
+
+.plan-savings-summary-item {
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+  min-width:      100px;
+}
+
+.plan-savings-summary-label {
+  font-size:      0.7rem;
+  color:          var(--text-muted);
+  font-weight:    600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 /* ─────────────────────────────────────────
    BUTTONS
 ───────────────────────────────────────── */
