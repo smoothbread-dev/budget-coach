@@ -114,6 +114,7 @@
     <nav class="nav-tabs">
       <button class="nav-tab-btn active" id="tab-btn-planner"   onclick="switchTab('planner')">Plan</button>
       <button class="nav-tab-btn"        id="tab-btn-recurring" onclick="switchTab('recurring')">Recurring</button>
+      <button class="nav-tab-btn"        id="tab-btn-savings"           onclick="switchTab('savings')" data-tab="savings">Savings</button>
       <button class="nav-tab-btn"        id="tab-btn-history"   onclick="switchTab('history')">History</button>
       <button class="nav-tab-btn"        id="tab-btn-defaults"  onclick="switchTab('defaults')">Defaults</button>
     </nav>
@@ -306,6 +307,21 @@
         </p>
         <div id="recurring-master-list"></div>
       </div>
+    </div>
+
+    <!-- SAVINGS TAB -->
+    <div id="tab-savings" class="tab-content" style="display:none">
+    
+      <div class="section-card">
+        <div class="section-header">
+          <h2 class="section-title">💰 Savings Categories</h2>
+          <button class="add-btn" onclick="openAddSavingsCategoryModal()">+ Add Category</button>
+        </div>
+        <div id="savings-categories-list">
+          <!-- Rendered by renderSavingsCategoriesList() -->
+        </div>
+      </div>
+    
     </div>
 
     <!-- ════════ HISTORY TAB — JS-controlled via switchTab() ════════ -->
@@ -569,6 +585,64 @@
     </div>
   </div>
 
+  <!-- SAVINGS CATEGORY MODAL -->
+  <div id="savings-category-modal" class="panel-overlay" style="display:none" onclick="closeSavingsCategoryModal()">
+    <div class="panel" onclick="event.stopPropagation()">
+  
+      <div class="panel-header">
+        <h3 id="savings-category-modal-title">Add Savings Category</h3>
+        <button class="panel-close-btn" onclick="closeSavingsCategoryModal()">✕</button>
+      </div>
+  
+      <div class="panel-body">
+  
+        <!-- Hidden ID field for edit mode -->
+        <input type="hidden" id="savings-category-id">
+  
+        <div class="form-group">
+          <label for="savings-category-name">Category Name</label>
+          <input
+            type="text"
+            id="savings-category-name"
+            class="form-input"
+            placeholder="e.g. Emergency Fund, Holiday, New Car"
+          >
+        </div>
+  
+        <div class="form-group">
+          <label for="savings-category-monthly">Monthly Contribution (€)</label>
+          <input
+            type="number"
+            id="savings-category-monthly"
+            class="form-input"
+            placeholder="e.g. 200"
+            min="0"
+            step="0.01"
+          >
+        </div>
+  
+        <div class="form-group">
+          <label for="savings-category-goal">Goal Amount (€)</label>
+          <input
+            type="number"
+            id="savings-category-goal"
+            class="form-input"
+            placeholder="e.g. 5000"
+            min="0.01"
+            step="0.01"
+          >
+        </div>
+  
+      </div>
+  
+      <div class="panel-footer">
+        <button class="btn-secondary" onclick="closeSavingsCategoryModal()">Cancel</button>
+        <button class="btn-primary"   onclick="submitSavingsCategoryModal()">Save</button>
+      </div>
+  
+    </div>
+  </div>
+  
   <!-- ══════════════════════════════════════════
        HISTORY DETAIL MODAL
   ══════════════════════════════════════════ -->
