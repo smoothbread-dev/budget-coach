@@ -925,7 +925,7 @@ async function updateSavingsCategory(id, name, monthlyAmount, goalAmount) {
 
 async function deleteSavingsCategory(id) {
   const confirmed = await showConfirm(
-    'Delete this savings category? All adjustments and monthly allocations for this category will also be removed.',
+    'Delete this savings category? All adjustment logs will also be removed. Existing monthly allocations in your plans won\'t be affected.',
     'Delete'
   );
   if (!confirmed) return;
@@ -938,9 +938,8 @@ async function deleteSavingsCategory(id) {
 
   if (error) { console.error('Error deleting savings category:', error); return; }
 
-  savingsCategories      = savingsCategories.filter(c => c.id !== id);
-  savingsAdjustments     = savingsAdjustments.filter(a => a.savings_category_id !== id);
-  planSavings            = planSavings.filter(p => p.savings_category_id !== id);
+  savingsCategories  = savingsCategories.filter(c => c.id !== id);
+  savingsAdjustments = savingsAdjustments.filter(a => a.savings_category_id !== id);
 
   renderSavingsCategoriesList();
   showToast('saved');
@@ -1296,7 +1295,7 @@ function renderPlanSavingsSection() {
 
   listEl.innerHTML = allocations.map(p => {
     const cat = savingsCategories.find(c => c.id === p.savings_category_id);
-    const catName = cat ? escHtml(cat.name) : 'Unknown Category';
+    const catName = cat ? escHtml(cat.name) : '⚠️ Deleted Category';
     return `
       <div class="item-row">
         <span class="item-name">${catName}</span>
