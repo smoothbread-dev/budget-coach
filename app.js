@@ -338,15 +338,15 @@ async function upsertPlanSavings(categoryId, amount) {
 
   const existing = planSavings.find(p =>
     p.savings_category_id === categoryId &&
-    p.month_year          === currentMonthYear
+    p.month_key           === currentKey()
   );
 
   const payload = {
     user_id             : currentUser.id,
-    month_year          : currentMonthYear,
+    month_key           : currentKey(),
     savings_category_id : categoryId,
     allocated_amount    : amount,
-    category_name       : categoryName // 👈 store the name
+    category_name       : categoryName
   };
 
   if (existing) {
@@ -355,12 +355,13 @@ async function upsertPlanSavings(categoryId, amount) {
       .update(payload)
       .eq('id', existing.id);
 
-    if (error) { 
-        console.error('Error updating plan savings:', error);
-        showToast('saved');
-        return; 
+    if (error) {
+      console.error('Error updating plan savings:', error);
+      showToast('error');
+      return;
     }
     Object.assign(existing, payload);
+    showToast('saved');
   } else {
     const { data, error } = await sb
       .from('plan_savings')
@@ -368,10 +369,10 @@ async function upsertPlanSavings(categoryId, amount) {
       .select()
       .single();
 
-    if (error) { 
-      console.error('Error inserting plan savings:', error); 
-      showToast('saved');
-      return; 
+    if (error) {
+      console.error('Error inserting plan savings:', error);
+      showToast('error');
+      return;
     }
     planSavings.push(data);
     showToast('saved');
