@@ -324,7 +324,9 @@ function calcCategoryTotalSaved(cat) {
  * Returns all plan_savings rows for the current month key.
  */
 function getPlanSavingsForCurrentMonth() {
-  return planSavings.filter(p => p.month_key === currentKey());
+  return planSavings.filter(p =>
+    p.month_key === currentKey()
+  );
 }
 
 /**
@@ -333,12 +335,14 @@ function getPlanSavingsForCurrentMonth() {
 async function upsertPlanSavings(categoryId, amount) {
   showToast('saving');
 
-  const cat          = savingsCategories.find(c => c.id === categoryId);
+  categoryId = String(categoryId);
+
+  const cat          = savingsCategories.find(c => String(c.id) === categoryId);
   const categoryName = cat ? cat.name : null;
 
   const existing = planSavings.find(p =>
-    p.savings_category_id === categoryId &&
-    p.month_key           === currentKey()
+    String(p.savings_category_id) === categoryId &&
+    p.month_key === currentKey()
   );
 
   const payload = {
@@ -1178,12 +1182,15 @@ function togglePlanSavingsForm() {
     return;
   }
 
-  // Populate dropdown — only show categories not yet allocated this month
-  const allocated    = getPlanSavingsForCurrentMonth().map(p => p.savings_category_id);
-  const available    = savingsCategories.filter(c => !allocated.includes(c.id));
-  const select       = document.getElementById('plan-savings-category-select');
-  const amountInput  = document.getElementById('plan-savings-amount');
-  const hintInput    = document.getElementById('plan-savings-monthly-hint');
+  const allocated = getPlanSavingsForCurrentMonth()
+    .map(p => String(p.savings_category_id));
+  const available = savingsCategories.filter(c =>
+    !allocated.includes(String(c.id))
+  );
+
+  const select      = document.getElementById('plan-savings-category-select');
+  const amountInput = document.getElementById('plan-savings-amount');
+  const hintInput   = document.getElementById('plan-savings-monthly-hint');
 
   if (available.length === 0) {
     alert('All savings categories are already allocated for this month.');
@@ -1193,8 +1200,8 @@ function togglePlanSavingsForm() {
   select.innerHTML = `<option value="">— Select a category —</option>` +
     available.map(c => `<option value="${c.id}">${escHtml(c.name)}</option>`).join('');
 
-  amountInput.value = '';
-  hintInput.value   = '';
+  amountInput.value  = '';
+  hintInput.value    = '';
   form.style.display = '';
 }
 
@@ -1336,7 +1343,9 @@ function renderPlanSavingsSection() {
   }
 
   listEl.innerHTML = allocations.map(p => {
-    const cat     = savingsCategories.find(c => c.id === p.savings_category_id);
+    const cat = savingsCategories.find(c =>
+      String(c.id) === String(p.savings_category_id)
+    );
     const catName = escHtml(cat?.name ?? p.category_name ?? 'Unknown Category');
     return `
       <div class="item-row">
