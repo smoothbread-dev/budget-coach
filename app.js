@@ -1431,3 +1431,25 @@ function resetAIReviewUI() {
   document.getElementById('ai-review-card').style.display = 'none';
   document.getElementById('ai-review-content').innerHTML  = '';
 }
+
+// ─────────────────────────────────────────
+// PASSWORD TOGGLE
+// ─────────────────────────────────────────
+
+/** Toggles password visibility on the auth form. */
+document.addEventListener('DOMContentLoaded', () => {
+  const toggleBtn     = document.getElementById('toggle-password');
+  const passwordInput = document.getElementById('auth-password');
+
+  if (toggleBtn && passwordInput) {
+    toggleBtn.addEventListener('click', () => {
+      if (passwordInput.type === 'password') {
+        passwordInput.type      = 'text';
+        toggleBtn.textContent   = '🙈';
+      } else {
+        passwordInput.type      = 'password';
+        toggleBtn.textContent   = '👁️';
+      }
+    });
+  }
+});
