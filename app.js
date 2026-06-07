@@ -1457,3 +1457,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// ─────────────────────────────────────────
+// PASSWORD TOGGLE — RESET HELPER
+// ─────────────────────────────────────────
+
+/** Resets the password field and toggle icon back to the default hidden state. */
+function resetPasswordToggle() {
+  const passwordInput = document.getElementById('auth-password');
+  const eyeOpen       = document.getElementById('icon-eye-open');
+  const eyeClosed     = document.getElementById('icon-eye-closed');
+
+  if (passwordInput) passwordInput.type    = 'password';
+  if (eyeOpen)       eyeOpen.style.display = '';
+  if (eyeClosed)     eyeClosed.style.display = 'none';
+}
