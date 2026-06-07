@@ -305,15 +305,10 @@ function sumAdjustments(categoryId) {
  * (monthly_amount × months since created_at) + sum of adjustments
  */
 function calcCategoryTotalSaved(cat) {
-  const createdAt    = new Date(cat.created_at);
-  const now          = new Date();
-  const monthsElapsed = Math.max(0,
-    (now.getFullYear() - createdAt.getFullYear()) * 12 +
-    (now.getMonth()    - createdAt.getMonth()) + 1
-  );
-  const autoSaved    = Number(cat.monthly_amount) * monthsElapsed;
-  const adjustTotal  = sumAdjustments(cat.id);
-  return autoSaved + adjustTotal;
+  const plannedTotal = planSavings
+    .filter(p => String(p.savings_category_id) === String(cat.id))
+    .reduce((sum, p) => sum + Number(p.allocated_amount), 0);
+  return plannedTotal + sumAdjustments(cat.id);
 }
 
 // ─────────────────────────────────────────
