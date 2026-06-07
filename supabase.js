@@ -115,10 +115,14 @@ function showAuth() {
   document.getElementById('auth-password').value = '';
 
   isSignUp = false;
-  document.getElementById('auth-title').textContent     = 'Welcome Back';
+  document.getElementById('auth-title').textContent      = 'Welcome Back';
   document.getElementById('auth-submit-btn').textContent = 'Sign In';
   document.getElementById('auth-toggle-btn').textContent = "Don't have an account? Sign Up";
-  document.getElementById('auth-error').style.display   = 'none';
+  document.getElementById('auth-error').style.display    = 'none';
+
+  // NEW: clear info box on auth reset
+  document.getElementById('auth-info').style.display = 'none';
+  document.getElementById('resend-btn').classList.add('bc-hidden');
 
   const app = document.getElementById('app');
   app.style.display = 'none';
@@ -134,10 +138,14 @@ function showAuth() {
 document.getElementById('auth-toggle-btn').addEventListener('click', () => {
   isSignUp = !isSignUp;
 
-  document.getElementById('auth-title').textContent     = isSignUp ? 'Create Your Account' : 'Welcome Back';
+  document.getElementById('auth-title').textContent      = isSignUp ? 'Create Your Account' : 'Welcome Back';
   document.getElementById('auth-submit-btn').textContent = isSignUp ? 'Sign Up' : 'Sign In';
   document.getElementById('auth-toggle-btn').textContent = isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up";
-  document.getElementById('auth-error').style.display   = 'none';
+  document.getElementById('auth-error').style.display    = 'none';
+
+  // NEW: clear info box on mode switch
+  document.getElementById('auth-info').style.display = 'none';
+  document.getElementById('resend-btn').classList.add('bc-hidden');
 
   document.getElementById('auth-email').value    = '';
   document.getElementById('auth-password').value = '';
@@ -152,6 +160,14 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
   const email    = document.getElementById('auth-email').value.trim();
   const password = document.getElementById('auth-password').value.trim();
   const errorEl  = document.getElementById('auth-error');
+  const infoEl   = document.getElementById('auth-info');
+  const infoText = document.getElementById('auth-info-text');
+  const resendBtn = document.getElementById('resend-btn');
+
+  // Clear previous messages
+  errorEl.style.display  = 'none';
+  infoEl.style.display   = 'none';
+  resendBtn.classList.add('bc-hidden');
 
   if (!email || !password) {
     errorEl.textContent   = 'Please enter both email and password.';
@@ -159,15 +175,75 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
     return;
   }
 
-  const result = isSignUp
-    ? await sb.auth.signUp({ email, password })
-    : await sb.auth.signInWithPassword({ email, password });
+  if (isSignUp) {
+    // ── SIGN UP ──
+    const { error } = await sb.auth.signUp({ email, password });
 
-  if (result.error) {
-    errorEl.textContent   = result.error.message;
-    errorEl.style.display = 'block';
+    if (error) {
+      errorEl.textContent   = error.message;
+      errorEl.style.display = 'block';
+    } else {
+      // Show confirmation message — do NOT proceed to app yet
+      document.getElementById('auth-email').value    = '';
+      document.getElementById('auth-password').value = '';
+      infoText.textContent = '✅ Account created! Please check your inbox and confirm your email address before signing in.';
+      infoEl.style.display = 'block';
+      resendBtn.classList.remove('bc-hidden');
+      resendBtn.dataset.email = email;
+    }
+
   } else {
-    errorEl.style.display = 'none';
+    // ── SIGN IN ──
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      // Detect unverified email error
+      const isUnverified =
+        error.message.toLowerCase().includes('email not confirmed') ||
+        error.message.toLowerCase().includes('not confirmed');
+
+      if (isUnverified) {
+        infoText.textContent = '📬 Your email address hasn\'t been verified yet. Please check your inbox (or spam folder) and click the confirmation link before signing in.';
+        infoEl.style.display = 'block';
+        resendBtn.classList.remove('bc-hidden');
+        resendBtn.dataset.email = email;
+      } else {
+        errorEl.textContent   = error.message;
+        errorEl.style.display = 'block';
+      }
+    } else {
+      infoEl.style.display = 'none';
+    }
+  }
+});
+
+// ─────────────────────────────────────────
+// RESEND CONFIRMATION EMAIL
+// ─────────────────────────────────────────
+
+/** Resends the confirmation email and gives the user feedback on the button itself. */
+document.addEventListener('click', async (e) => {
+  if (e.target.id !== 'resend-btn') return;
+
+  const btn   = e.target;
+  const email = btn.dataset.email;
+  if (!email) return;
+
+  btn.disabled     = true;
+  btn.textContent  = '⏳ Sending…';
+
+  const { error } = await sb.auth.resend({ type: 'signup', email });
+
+  if (error) {
+    btn.textContent = '⚠️ Failed to resend. Try again.';
+    btn.disabled    = false;
+  } else {
+    btn.textContent = '✅ Email sent! Check your inbox.';
+    // Re-enable after 30s to allow another resend attempt
+    setTimeout(() => {
+      btn.disabled    = false;
+      btn.textContent = '📧 Resend confirmation email';
+    }, 30000);
   }
 });
 
