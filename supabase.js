@@ -96,27 +96,29 @@ function showApp() {
 
 /** Call this once after showApp() renders the header */
 function initUserMenu() {
-  // Retry if DOM isn't ready yet
   const avatarBtn = document.getElementById('user-avatar-btn');
   if (!avatarBtn) {
     console.warn('initUserMenu: avatar btn not found, retrying...');
-    setTimeout(initUserMenu, 100); // 👈 retry after 100ms
+    setTimeout(initUserMenu, 100);
     return;
   }
 
-  // Remove old listeners cleanly
+  // Remove old listeners cleanly by cloning
   const freshBtn = avatarBtn.cloneNode(true);
   avatarBtn.replaceWith(freshBtn);
 
+  const dropdown = document.getElementById('user-dropdown'); // 👈 target the dropdown directly
+
   freshBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    document.getElementById('user-menu')?.classList.toggle('open');
+    dropdown?.classList.toggle('open'); // 👈 toggle on dropdown, not user-menu
   });
 
-  // Close dropdown when clicking outside
+  // Use { once: true } so this doesn't stack on re-calls
+  // Re-add each time initUserMenu runs (safe since freshBtn is new)
   document.addEventListener('click', () => {
-    document.getElementById('user-menu')?.classList.remove('open');
-  }, { once: false });
+    dropdown?.classList.remove('open');
+  });
 }
 
 // ─────────────────────────────────────────
@@ -320,24 +322,6 @@ document.addEventListener('click', async (e) => {
 // ─────────────────────────────────────────
 // USER AVATAR & DROPDOWN
 // ─────────────────────────────────────────
-
-document.addEventListener('DOMContentLoaded', () => {
-
-  /** Toggles the dropdown open/closed */
-  const avatarBtn = document.getElementById('user-avatar-btn');
-  if (avatarBtn) {
-    avatarBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      document.getElementById('user-menu')?.classList.toggle('open');
-    });
-  }
-
-  /** Closes the dropdown when clicking anywhere outside */
-  document.addEventListener('click', () => {
-    document.getElementById('user-menu')?.classList.remove('open');
-  });
-
-});
 
 /** Populates the avatar circle initial and dropdown email */
 function setUserAvatar(email) {
