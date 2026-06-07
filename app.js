@@ -720,7 +720,7 @@ async function saveRecurringPanel() {
 /** Confirms and deletes a recurring item from Supabase and local state. */
 async function deleteRecurringItem(id) {
   if (!confirm('Remove this recurring item? Existing plan items won\'t be affected.')) return;
-  state.recurringItems = state.recurringItems.filter(r => r.id !== id);
+  state.recurringItems = state.recurringItems.filter(r => r.id != id);
   await deleteRecurringFromDB(id);
   renderRecurringMasterList();
 }
