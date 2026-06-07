@@ -263,19 +263,6 @@ body {
 }
 
 /* ─────────────────────────────────────────
-   CARD SPACING — ensure all direct children
-   of main-content have visible separation
-───────────────────────────────────────── */
-.main-content > .card,
-.main-content > .summary-strip,
-.main-content > .total-expenses-card,
-.main-content > .ai-review-card,
-.main-content > .purpose-banner,
-.main-content > .coach-me-wrap {
-  margin: 10px 0px;
-}
-
-/* ─────────────────────────────────────────
    PURPOSE BANNER
 ───────────────────────────────────────── */
 .purpose-banner {
@@ -345,6 +332,7 @@ body {
   border-radius: var(--radius);
   padding:       20px;
   box-shadow:    0 2px 12px rgba(0,0,0,0.3);
+  margin: 10px 0px;
 }
 
 .card-title {
@@ -557,6 +545,7 @@ body {
   border-radius: var(--radius);
   padding:       16px 20px;
   box-shadow:    0 2px 12px rgba(0,0,0,0.3);
+  margin: 10px 0px;
 }
 
 .total-expenses-row {
