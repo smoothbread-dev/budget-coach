@@ -177,7 +177,13 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
 
   if (isSignUp) {
     // ── SIGN UP ──
-    const { error } = await sb.auth.signUp({ email, password });
+    const { error } = await sb.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: 'https://smoothbread-dev.github.io/budget-coach/'
+      }
+    });
 
     if (error) {
       errorEl.textContent   = error.message;
