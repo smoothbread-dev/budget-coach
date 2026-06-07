@@ -1916,6 +1916,21 @@ async function runAIReview() {
     .map(i => `- ${i.name} (${i.category}, ${i.type}): ${fmt(i.amount)}`)
     .join('\n');
 
+  // Savings allocations for this month
+  const currentAllocations = getPlanSavingsForCurrentMonth();
+  const totalAllocated     = getTotalAllocatedForCurrentMonth();
+
+  const savingsAllocationLines = currentAllocations.length > 0
+    ? currentAllocations.map(p => {
+        const cat = savingsCategories.find(c => String(c.id) === String(p.savings_category_id));
+        const catName    = cat?.name ?? p.category_name ?? 'Unknown';
+        const totalSaved = cat ? calcCategoryTotalSaved(cat) : 0;
+        const goalAmt    = cat ? Number(cat.goal_amount) : 0;
+        const pct        = goalAmt > 0 ? ((totalSaved / goalAmt) * 100).toFixed(1) : 'N/A';
+        return `- ${catName}: ${fmt(p.allocated_amount)} allocated this month (${fmt(totalSaved)} saved of ${fmt(goalAmt)} goal — ${pct}% complete)`;
+      }).join('\n')
+    : 'No savings allocations set for this month.';
+
   const prompt = `You are a friendly but honest personal finance coach. The user is planning their budget BEFORE their salary arrives. Analyse their expected budget and give a concise, actionable coaching session.
 
 PLAN SUMMARY:
@@ -1930,13 +1945,17 @@ ${fundedNote}
 PLANNED EXPENSES:
 ${itemList || 'No items added yet.'}
 
+SAVINGS ALLOCATIONS THIS MONTH (${fmt(totalAllocated)} total allocated):
+${savingsAllocationLines}
+
 Please provide:
 1. A brief overall assessment of this plan (2-3 sentences)
 2. 2-3 specific, actionable coaching tips with RM amounts where relevant
-3. One encouraging closing remark to motivate them
+3. A short comment on their savings allocations — are they on track for their goals? Any categories falling behind?
+4. One encouraging closing remark to motivate them
 
 Keep the tone warm, coach-like, and honest. Format clearly with short paragraphs.`;
-
+  
   const card    = document.getElementById('ai-review-card');
   const content = document.getElementById('ai-review-content');
   card.style.display = '';
