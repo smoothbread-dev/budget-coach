@@ -1318,13 +1318,20 @@ function renderPlanSavingsSection() {
     const remaining = savings - totalAllocated;
     const isOver    = remaining < 0;
     summaryText.innerHTML = `
-      <span>Allocated: <strong>${fmt(totalAllocated)}</strong></span>
-      <span style="margin:0 8px;color:var(--border)">|</span>
-      <span>Projected Savings: <strong>${fmt(savings)}</strong></span>
-      <span style="margin:0 8px;color:var(--border)">|</span>
-      <span style="color:${isOver ? 'var(--danger)' : 'var(--accent2)'}">
-        ${isOver ? '⚠️ Over by ' + fmt(Math.abs(remaining)) : '✅ Remaining: ' + fmt(remaining)}
-      </span>
+      <div class="plan-savings-summary-row">
+        <span class="plan-savings-summary-item">
+          <span class="plan-savings-summary-label">Allocated</span>
+          <strong>${fmt(totalAllocated)}</strong>
+        </span>
+        <span class="plan-savings-summary-item">
+          <span class="plan-savings-summary-label">Projected Savings</span>
+          <strong>${fmt(savings)}</strong>
+        </span>
+        <span class="plan-savings-summary-item" style="color:${isOver ? 'var(--danger)' : 'var(--accent2)'}">
+          <span class="plan-savings-summary-label">${isOver ? '⚠️ Over by' : '✅ Remaining'}</span>
+          <strong>${fmt(Math.abs(remaining))}</strong>
+        </span>
+      </div>
     `;
   } else {
     summaryEl.style.display = 'none';
