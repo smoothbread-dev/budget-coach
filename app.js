@@ -1659,7 +1659,7 @@ function renderTotalExpensesBar(needs, wants, funded, gross, expensesPct, income
   const grossEl = document.getElementById('total-exp-gross');
   if (funded > 0) {
     grossEl.style.display = '';
-    grossEl.textContent   = `(${fmt(gross)} incl. funded)`;
+    grossEl.innerHTML = `<span class="gross-incl-label">incl. funded:</span> ${fmt(gross)}`;
   } else {
     grossEl.style.display = 'none';
   }
@@ -1672,8 +1672,9 @@ function renderTotalExpensesBar(needs, wants, funded, gross, expensesPct, income
   fill.style.width = `${Math.min(100, expensesPct)}%`;
   fill.className   = `expenses-bar-fill ${colourClass}`;
 
-  document.getElementById('total-exp-breakdown').textContent =
-    `Needs ${fmt(needs)} · Wants ${fmt(wants)}${funded > 0 ? ` · Funded ${fmt(funded)}` : ''}`;
+  const breakdownParts = [`Needs ${fmt(needs)}`, `Wants ${fmt(wants)}`];
+  if (funded > 0) breakdownParts.push(`Funded ${fmt(funded)}`);
+  document.getElementById('total-exp-breakdown').textContent = breakdownParts.join(' · ');
   document.getElementById('total-exp-income-label').textContent = `of ${fmt(income)}`;
 }
 
