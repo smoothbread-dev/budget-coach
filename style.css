@@ -272,7 +272,7 @@ body {
 .main-content > .ai-review-card,
 .main-content > .purpose-banner,
 .main-content > .coach-me-wrap {
-  margin-bottom: 0;   /* gap handles spacing */
+  margin: 10px 0px;
 }
 
 /* ─────────────────────────────────────────
