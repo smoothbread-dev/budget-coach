@@ -1227,19 +1227,41 @@ async function deletePlanSavingsAllocation(id) {
 }
 
 /**
- * Opens an inline edit for a plan savings allocation amount.
+ * Opens the edit panel for a plan savings allocation.
  */
-async function editPlanSavingsAllocation(id) {
+function editPlanSavingsAllocation(id) {
   const row = planSavings.find(p => p.id === id);
   if (!row) return;
 
-  const cat        = savingsCategories.find(c => c.id === row.savings_category_id);
-  const catName    = cat ? cat.name : 'this category';
-  const newAmount  = parseFloat(prompt(`Edit allocated amount for "${catName}":`, row.allocated_amount));
+  const cat     = savingsCategories.find(c => c.id === row.savings_category_id);
+  const catName = cat ? cat.name : '⚠️ Deleted Category';
 
-  if (isNaN(newAmount) || newAmount <= 0) { alert('Please enter a valid amount.'); return; }
+  document.getElementById('edit-plan-savings-id').value        = id;
+  document.getElementById('edit-plan-savings-cat-name').value  = catName;
+  document.getElementById('edit-plan-savings-amount').value    = row.allocated_amount;
+  document.getElementById('edit-plan-savings-subtitle').textContent =
+    `Updating allocation for "${catName}" this month.`;
 
-  await upsertPlanSavings(row.savings_category_id, newAmount);
+  openPanel('edit-plan-savings-panel-overlay', 'edit-plan-savings-amount');
+}
+
+/**
+ * Saves the edited plan savings allocation amount.
+ */
+async function saveEditPlanSavingsAllocation() {
+  const id     = document.getElementById('edit-plan-savings-id').value;
+  const amount = parseFloat(document.getElementById('edit-plan-savings-amount').value);
+
+  if (isNaN(amount) || amount <= 0) {
+    alert('Please enter a valid amount.');
+    return;
+  }
+
+  const row = planSavings.find(p => p.id === id);
+  if (!row) return;
+
+  closePanel('edit-plan-savings-panel-overlay');
+  await upsertPlanSavings(row.savings_category_id, amount);
   renderPlanSavingsSection();
 }
 
