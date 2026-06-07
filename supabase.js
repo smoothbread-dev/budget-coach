@@ -177,7 +177,7 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
 
   if (isSignUp) {
     // ── SIGN UP ──
-    const { error } = await sb.auth.signUp({
+    const { data, error } = await sb.auth.signUp({
       email,
       password,
       options: {
@@ -187,6 +187,9 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
 
     if (error) {
       errorEl.textContent   = error.message;
+      errorEl.style.display = 'block';
+    } else if (data?.user?.identities?.length === 0) {
+      errorEl.textContent   = 'An account with this email already exists. Please sign in instead.';
       errorEl.style.display = 'block';
     } else {
       // Show confirmation message — do NOT proceed to app yet
