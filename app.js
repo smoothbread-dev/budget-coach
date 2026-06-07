@@ -440,16 +440,12 @@ function updateMonthLabel() {
 // ─────────────────────────────────────────
 
 /** Shows a confirmation dialog before permanently deleting all data for the current month. */
-function confirmDeleteMonth() {
+async function confirmDeleteMonth() {
   const label = document.getElementById('month-label').textContent.trim();
-  const confirmed = confirm(
-    `⚠️ Delete all data for ${label}?\n\n` +
-    `This will permanently remove:\n` +
-    `  • Expected income\n` +
-    `  • Savings goal\n` +
-    `  • All expected needs & wants\n` +
-    `  • AI review\n\n` +
-    `This cannot be undone.`
+
+  const confirmed = await showConfirm(
+    `This will permanently remove all income, savings goal, expenses and AI review for ${label}. This cannot be undone.`,
+    'Delete Month'
   );
   if (confirmed) deleteCurrentMonth();
 }
@@ -722,7 +718,12 @@ async function saveRecurringPanel() {
 
 /** Confirms and deletes a recurring item from Supabase and local state. */
 async function deleteRecurringItem(id) {
-  if (!confirm('Remove this recurring item? Existing plan items won\'t be affected.')) return;
+  const item = state.recurringItems.find(r => r.id == id);
+  const name = item ? `"${item.name}"` : 'this item';
+
+  const confirmed = await showConfirm(`Remove ${name} from your recurring list? Existing plan items won't be affected.`);
+  if (!confirmed) return;
+
   state.recurringItems = state.recurringItems.filter(r => r.id != id);
   await deleteRecurringFromDB(id);
   renderRecurringMasterList();
@@ -886,6 +887,12 @@ function addItem(cat) {
 /** Removes an item from the current month plan by ID and saves. */
 function deleteItem(id) {
   const data = currentMonthData();
+  const item = data.items.find(i => i.id === id);
+  if (!item) return;
+
+  const confirmed = await showConfirm(`Remove "${item.name}" from your plan?`);
+  if (!confirmed) return;
+
   data.items = data.items.filter(i => i.id !== id);
   render();
   triggerSave();
@@ -1258,6 +1265,39 @@ function handleModalOverlayClick(e) {
 function closePanel(id) {
   document.getElementById(id).classList.remove('open');
   document.body.style.overflow = ''; // 🔓 unlock scroll
+}
+
+/**
+ * Shows a custom confirmation modal and returns a Promise<boolean>.
+ * Resolves true if the user confirms, false if they cancel.
+ */
+function showConfirm(message, confirmText = 'Delete') {
+  return new Promise(resolve => {
+    document.getElementById('confirm-modal-message').textContent = message;
+    document.getElementById('confirm-modal-ok').textContent      = confirmText;
+
+    const overlay   = document.getElementById('confirm-modal-overlay');
+    const okBtn     = document.getElementById('confirm-modal-ok');
+    const cancelBtn = document.getElementById('confirm-modal-cancel');
+
+    // Clean up old listeners before adding new ones
+    const freshOk     = okBtn.cloneNode(true);
+    const freshCancel = cancelBtn.cloneNode(true);
+    okBtn.replaceWith(freshOk);
+    cancelBtn.replaceWith(freshCancel);
+
+    function close(result) {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+      resolve(result);
+    }
+
+    document.getElementById('confirm-modal-ok').addEventListener('click',     () => close(true),  { once: true });
+    document.getElementById('confirm-modal-cancel').addEventListener('click', () => close(false), { once: true });
+
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  });
 }
 
 /**
