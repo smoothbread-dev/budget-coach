@@ -333,32 +333,49 @@ function getPlanSavingsForCurrentMonth() {
 async function upsertPlanSavings(categoryId, amount) {
   showToast('saving');
 
-  const { data, error } = await sb
-    .from('plan_savings')
-    .upsert({
-      user_id:             currentUser.id,
-      month_key:           currentKey(),
-      savings_category_id: categoryId,
-      allocated_amount:    amount
-    }, { onConflict: 'user_id,month_key,savings_category_id' })
-    .select()
-    .single();
+  const cat          = savingsCategories.find(c => c.id === categoryId);
+  const categoryName = cat ? cat.name : null;
 
-  if (error) {
-    console.error('upsertPlanSavings error:', error);
-    showToast('saved');
-    return null;
-  }
-
-  // Update local state
-  const idx = planSavings.findIndex(
-    p => p.month_key === currentKey() && p.savings_category_id === categoryId
+  const existing = planSavings.find(p =>
+    p.savings_category_id === categoryId &&
+    p.month_year          === currentMonthYear
   );
-  if (idx !== -1) planSavings[idx] = data;
-  else            planSavings.push(data);
 
-  showToast('saved');
-  return data;
+  const payload = {
+    user_id             : currentUser.id,
+    month_year          : currentMonthYear,
+    savings_category_id : categoryId,
+    allocated_amount    : amount,
+    category_name       : categoryName // 👈 store the name
+  };
+
+  if (existing) {
+    const { error } = await sb
+      .from('plan_savings')
+      .update(payload)
+      .eq('id', existing.id);
+
+    if (error) { 
+        console.error('Error updating plan savings:', error);
+        showToast('saved');
+        return; 
+    }
+    Object.assign(existing, payload);
+  } else {
+    const { data, error } = await sb
+      .from('plan_savings')
+      .insert(payload)
+      .select()
+      .single();
+
+    if (error) { 
+      console.error('Error inserting plan savings:', error); 
+      showToast('saved');
+      return; 
+    }
+    planSavings.push(data);
+    showToast('saved');
+  }
 }
 
 /**
@@ -1316,8 +1333,8 @@ function renderPlanSavingsSection() {
   }
 
   listEl.innerHTML = allocations.map(p => {
-    const cat = savingsCategories.find(c => c.id === p.savings_category_id);
-    const catName = cat ? escHtml(cat.name) : '⚠️ Deleted Category';
+    const cat     = savingsCategories.find(c => c.id === row.savings_category_id);
+    const catName = escHtml(cat?.name ?? row.category_name ?? 'Unknown Category');
     return `
       <div class="item-row">
         <span class="item-name">${catName}</span>
