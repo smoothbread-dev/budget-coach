@@ -1440,16 +1440,21 @@ function resetAIReviewUI() {
 document.addEventListener('DOMContentLoaded', () => {
   const toggleBtn     = document.getElementById('toggle-password');
   const passwordInput = document.getElementById('auth-password');
+  const eyeOpen       = document.getElementById('icon-eye-open');
+  const eyeClosed     = document.getElementById('icon-eye-closed');
 
   if (toggleBtn && passwordInput) {
     toggleBtn.addEventListener('click', () => {
       if (passwordInput.type === 'password') {
-        passwordInput.type      = 'text';
-        toggleBtn.textContent   = '🙈';
+        passwordInput.type        = 'text';
+        eyeOpen.style.display     = 'none';
+        eyeClosed.style.display   = '';
       } else {
-        passwordInput.type      = 'password';
-        toggleBtn.textContent   = '👁️';
+        passwordInput.type        = 'password';
+        eyeOpen.style.display     = '';
+        eyeClosed.style.display   = 'none';
       }
     });
   }
+});
 });
