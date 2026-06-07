@@ -358,10 +358,11 @@ async function upsertPlanSavings(categoryId, amount) {
     if (error) {
       console.error('Error updating plan savings:', error);
       showToast('error');
-      return;
+      return false;
     }
     Object.assign(existing, payload);
     showToast('saved');
+    return true;
   } else {
     const { data, error } = await sb
       .from('plan_savings')
@@ -372,10 +373,11 @@ async function upsertPlanSavings(categoryId, amount) {
     if (error) {
       console.error('Error inserting plan savings:', error);
       showToast('error');
-      return;
+      return false;
     }
     planSavings.push(data);
     showToast('saved');
+    return true;
   }
 }
 
