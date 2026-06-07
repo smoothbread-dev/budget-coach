@@ -637,6 +637,32 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ══════════════════════════════════════════
+   SAVINGS CATEGORIES
+══════════════════════════════════════════ */
+
+#savings-categories-list .recurring-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#savings-categories-list .recurring-item-name {
+  flex: 1;
+  font-weight: 600;
+}
+
+#savings-categories-list .recurring-item-amount {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+#savings-categories-list .empty-subsection {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ══════════════════════════════════════════
    HISTORY
 ══════════════════════════════════════════ */
 .history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
