@@ -72,7 +72,7 @@ async function loadFromSupabase() {
     .from('user_defaults')
     .select('*')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
 
   if (defaults) {
     state.defaults.income      = defaults.income;
