@@ -1333,7 +1333,7 @@ function renderPlanSavingsSection() {
   }
 
   listEl.innerHTML = allocations.map(p => {
-    const cat     = savingsCategories.find(c => c.id === row.savings_category_id);
+    const cat     = savingsCategories.find(c => c.id === p.savings_category_id);
     const catName = escHtml(cat?.name ?? row.category_name ?? 'Unknown Category');
     return `
       <div class="item-row">
