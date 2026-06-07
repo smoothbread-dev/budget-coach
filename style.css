@@ -544,6 +544,8 @@ body {
 .btn-primary:hover   { background: #5a52e0; }
 .btn-secondary       { background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); }
 .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.btn-danger          { background: var(--danger); color: #fff; }
+.btn-danger:hover    { opacity: 0.88; }
 .btn-sm              { padding: 6px 12px; font-size: 0.78rem; }
 
 .add-item-trigger {
