@@ -1486,9 +1486,31 @@ body {
    RESPONSIVE
 ───────────────────────────────────────── */
 @media (max-width: 600px) {
-  .app-header    { padding: 0 12px; gap: 10px; }
-  .app-logo span:last-child { display: none; }
-  .nav-tab-btn   { padding: 6px 10px; font-size: 0.8rem; }
+  .app-header {
+    padding: 0 10px;
+    gap: 6px;
+    grid-template-columns: auto 1fr auto; /* keep structure */
+  }
+
+  .app-logo span:last-child { display: none; } /* hide app name text, keep icon */
+
+  /* Nav tabs: smooth scrollable strip */
+  .nav-tabs {
+    overflow-x:                 scroll;
+    -webkit-overflow-scrolling: touch; /* smooth iOS momentum scroll */
+    scroll-snap-type:           x mandatory;
+    padding-bottom:             2px; /* prevent clipping */
+    gap:                        2px;
+    justify-content:            flex-start; /* left-align so first tab is visible */
+  }
+
+  .nav-tab-btn {
+    padding:     6px 10px;
+    font-size:   0.8rem;
+    flex-shrink: 0; /* prevent tabs from squishing */
+    scroll-snap-align: start;
+  }
+
   .main-content  { padding: 14px 12px 120px; gap: 12px; }
   .summary-strip { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .summary-tile  { padding: 10px 10px; }
