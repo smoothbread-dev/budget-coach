@@ -157,16 +157,17 @@ document.getElementById('auth-toggle-btn').addEventListener('click', () => {
 
 /** Handles Sign In and Sign Up form submission. Auth state changes are handled by onAuthStateChange. */
 document.getElementById('auth-submit-btn').addEventListener('click', async () => {
-  const email    = document.getElementById('auth-email').value.trim();
-  const password = document.getElementById('auth-password').value.trim();
-  const errorEl  = document.getElementById('auth-error');
-  const infoEl   = document.getElementById('auth-info');
-  const infoText = document.getElementById('auth-info-text');
+  const email     = document.getElementById('auth-email').value.trim();
+  const password  = document.getElementById('auth-password').value.trim();
+  const errorEl   = document.getElementById('auth-error');
+  const infoEl    = document.getElementById('auth-info');
+  const infoText  = document.getElementById('auth-info-text');
   const resendBtn = document.getElementById('resend-btn');
+  const submitBtn = document.getElementById('auth-submit-btn');
 
   // Clear previous messages
-  errorEl.style.display  = 'none';
-  infoEl.style.display   = 'none';
+  errorEl.style.display = 'none';
+  infoEl.style.display  = 'none';
   resendBtn.classList.add('bc-hidden');
 
   if (!email || !password) {
@@ -174,6 +175,14 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
     errorEl.style.display = 'block';
     return;
   }
+
+  // ── LOADING STATE ON ──
+  submitBtn.disabled    = true;
+  submitBtn.textContent = isSignUp ? '⏳ Creating account…' : '⏳ Signing in…';
+
+  document.getElementById('auth-email').disabled = true; 
+  document.getElementById('auth-password').disabled = true;  
+  document.getElementById('toggle-password').disabled = true;
 
   if (isSignUp) {
     // ── SIGN UP ──
@@ -192,7 +201,6 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
       errorEl.textContent   = 'An account with this email already exists. Please sign in instead.';
       errorEl.style.display = 'block';
     } else {
-      // Show confirmation message — do NOT proceed to app yet
       document.getElementById('auth-email').value    = '';
       document.getElementById('auth-password').value = '';
       infoText.textContent = '✅ Account created! Please check your inbox and confirm your email address before signing in.';
@@ -206,7 +214,6 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
     const { error } = await sb.auth.signInWithPassword({ email, password });
 
     if (error) {
-      // Detect unverified email error
       const isUnverified =
         error.message.toLowerCase().includes('email not confirmed') ||
         error.message.toLowerCase().includes('not confirmed');
@@ -224,6 +231,10 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
       infoEl.style.display = 'none';
     }
   }
+
+  // ── LOADING STATE OFF ──
+  submitBtn.disabled    = false;
+  submitBtn.textContent = isSignUp ? 'Sign Up' : 'Sign In';
 });
 
 // ─────────────────────────────────────────
@@ -267,7 +278,20 @@ document.addEventListener('click', async (e) => {
  */
 document.addEventListener('click', async (e) => {
   if (e.target.id === 'logout-btn') {
+    const btn = e.target;
+
+    // ── LOADING STATE ON ──
+    btn.disabled    = true;
+    btn.textContent = '⏳ Signing out…';
+
     await sb.auth.signOut();
+
+    // ── LOADING STATE OFF (in case sign out fails) ──
+    btn.disabled    = false;
+    btn.textContent = 'Sign Out';
+    document.getElementById('auth-email').disabled = false; 
+    document.getElementById('auth-password').disabled = false;  
+    document.getElementById('toggle-password').disabled = false;
   }
 });
 
