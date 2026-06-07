@@ -414,7 +414,7 @@ function enterOwnValues() {
 
 /** Switches the active tab and triggers any tab-specific render logic. */
 function switchTab(tab) {
-  ['planner', 'recurring', 'history', 'defaults'].forEach(t => {
+  ['planner', 'recurring', 'history', 'defaults', 'savings'].forEach(t => {
     document.getElementById(`tab-${t}`).style.display     = t === tab ? '' : 'none';
     document.getElementById(`tab-btn-${t}`).classList.toggle('active', t === tab);
   });
@@ -425,6 +425,7 @@ function switchTab(tab) {
   if (tab === 'history')   renderHistory();
   if (tab === 'recurring') renderRecurringMasterList();
   if (tab === 'defaults')  renderDefaultsTab();
+  if (tab === 'savings')   renderSavingsCategoriesList();
 }
 
 // ─────────────────────────────────────────
