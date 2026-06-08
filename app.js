@@ -36,23 +36,100 @@ let planSavings        = [];   // plan_savings rows (all for this user)
 // TOAST
 // ─────────────────────────────────────────
 
-function showToast(status) {
+const TOAST_DURATIONS = {
+  saving:  null,    // stays until next state
+  saved:   1800,
+  error:   3500,
+  warning: 3000,
+  info:    2500
+};
+
+const TOAST_CONFIG = {
+  saving:  { icon: '',   label: 'Saving…',  spinner: true  },
+  saved:   { icon: '✓',  label: 'Saved',    spinner: false },
+  error:   { icon: '✕',  label: '',         spinner: false },
+  warning: { icon: '⚠️', label: '',         spinner: false },
+  info:    { icon: 'ℹ️', label: '',         spinner: false }
+};
+
+function showToast(status, message = '') {
   const toast   = document.getElementById('save-toast');
   const spinner = document.getElementById('toast-spinner');
   const label   = document.getElementById('toast-label');
 
-  toast.classList.remove('saved');
-  spinner.style.display = '';
+  // Clear previous state classes
+  toast.classList.remove('saved', 'toast-error', 'toast-warning', 'toast-info', 'visible');
+
+  // Clear any existing auto-dismiss timer
+  if (toast._dismissTimer) {
+    clearTimeout(toast._dismissTimer);
+    toast._dismissTimer = null;
+  }
+
+  const config   = TOAST_CONFIG[status] || TOAST_CONFIG.saved;
+  spinner.style.display = config.spinner ? '' : 'none';
 
   if (status === 'saving') {
     label.textContent = 'Saving…';
     toast.classList.add('visible');
-  } else {
-    spinner.style.display = 'none';
-    label.textContent = '✓ Saved';
-    toast.classList.add('visible', 'saved');
-    setTimeout(() => toast.classList.remove('visible', 'saved'), TOAST_TIMEOUT);
+    return;
   }
+
+  // Build label text
+  const displayText = message
+    ? `${config.icon} ${message}`.trim()
+    : `${config.icon} ${config.label}`.trim();
+
+  label.textContent = displayText;
+
+  // Apply class
+  if (status === 'saved')   toast.classList.add('saved');
+  if (status === 'error')   toast.classList.add('toast-error');
+  if (status === 'warning') toast.classList.add('toast-warning');
+  if (status === 'info')    toast.classList.add('toast-info');
+
+  toast.classList.add('visible');
+
+  const duration = TOAST_DURATIONS[status];
+  if (duration) {
+    toast._dismissTimer = setTimeout(() => {
+      toast.classList.remove('visible', 'saved', 'toast-error', 'toast-warning', 'toast-info');
+    }, duration);
+  }
+}
+
+// ─────────────────────────────────────────
+// SHOW ALERT MODAL
+// ─────────────────────────────────────────
+
+const ALERT_CONFIG = {
+  error:   { icon: '❌', title: 'Error',   cls: 'type-error'   },
+  warning: { icon: '⚠️', title: 'Warning', cls: 'type-warning' },
+  info:    { icon: 'ℹ️', title: 'Info',    cls: 'type-info'    },
+  success: { icon: '✅', title: 'Success', cls: 'type-success' }
+};
+
+function showAlert(message, type = 'warning') {
+  const config  = ALERT_CONFIG[type] || ALERT_CONFIG.warning;
+  const overlay = document.getElementById('alert-modal-overlay');
+  const header  = document.getElementById('alert-modal-header');
+  const icon    = document.getElementById('alert-modal-icon');
+  const title   = document.getElementById('alert-modal-title');
+  const msg     = document.getElementById('alert-modal-message');
+
+  // Reset header classes
+  header.className = `alert-modal-header ${config.cls}`;
+  icon.textContent  = config.icon;
+  title.textContent = config.title;
+  msg.textContent   = message;
+
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAlert() {
+  document.getElementById('alert-modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 // ─────────────────────────────────────────
@@ -669,7 +746,7 @@ async function deleteCurrentMonth() {
 
   } catch (err) {
     console.error('Failed to delete month:', err);
-    alert('Something went wrong while deleting. Please try again.');
+    showAlert('Something went wrong while deleting. Please try again.', 'error');
     const btn = document.getElementById('month-delete-btn');
     if (btn) btn.textContent = '🗑️';
   }
@@ -701,7 +778,7 @@ function openIncomePanel() {
 
 function saveIncomePanel() {
   const val = parseFloat(document.getElementById('panel-income').value);
-  if (!val || val <= 0) { alert('Please enter a valid income amount.'); return; }
+  if (!val || val <= 0) { showAlert('Please enter a valid income amount.', 'warning'); return; }
 
   const data = currentMonthData();
   data.income = val;
@@ -756,7 +833,7 @@ function saveGoalPanel() {
   const val = Math.min(100, Math.max(0,
     parseFloat(document.getElementById('panel-goal').value) || 0));
 
-  if (val <= 0) { alert('Please enter a savings goal between 1 and 100%.'); return; }
+  if (val <= 0) { showAlert('Please enter a savings goal between 1 and 100%.', 'warning'); return; }
 
   const data = currentMonthData();
   data.savingsGoal = val;
@@ -847,8 +924,8 @@ function openRecurringPanel(id) {
 async function saveRecurringPanel() {
   const name   = document.getElementById('panel-rec-name').value.trim();
   const amount = parseFloat(document.getElementById('panel-rec-amount').value);
-  if (!name)                  { alert('Please enter an item name.'); return; }
-  if (!amount || amount <= 0) { alert('Please enter a valid amount.'); return; }
+  if (!name)                  { showAlert('Please enter an item name.', 'warning'); return; }
+  if (!amount || amount <= 0) { showAlert('Please enter a valid amount.', 'warning'); return; }
 
   if (editingRecurringId) {
     const item = state.recurringItems.find(r => String(r.id) === String(editingRecurringId));
@@ -1115,12 +1192,12 @@ async function submitSavingsCategoryModal() {
   const monthlyAmount = document.getElementById('savings-category-monthly').value;
   const goalAmount    = document.getElementById('savings-category-goal').value;
 
-  if (!name) { alert('Please enter a category name.'); return; }
+  if (!name) { showAlert('Please enter a category name.', 'warning'); return; }
   if (isNaN(parseFloat(monthlyAmount)) || parseFloat(monthlyAmount) < 0) {
-    alert('Please enter a valid monthly amount.'); return;
+    showAlert('Please enter a valid monthly amount.', 'warning'); return;
   }
   if (isNaN(parseFloat(goalAmount)) || parseFloat(goalAmount) <= 0) {
-    alert('Please enter a valid goal amount.'); return;
+    showAlert('Please enter a valid goal amount.', 'warning'); return;
   }
 
   if (id) await updateSavingsCategory(id, name, monthlyAmount, goalAmount);
@@ -1150,7 +1227,7 @@ async function submitSavingsAdjustment() {
   const amount     = parseFloat(amountRaw);
 
   if (isNaN(amount) || amount === 0) {
-    alert('Please enter a non-zero amount. Use a negative number for withdrawals.');
+    showAlert('Please enter a non-zero amount. Use a negative number for withdrawals.', 'warning');
     return;
   }
 
@@ -1197,7 +1274,7 @@ function togglePlanSavingsForm() {
   const hintInput   = document.getElementById('plan-savings-monthly-hint');
 
   if (available.length === 0) {
-    alert('All savings categories are already allocated for this month.');
+    showAlert('All savings categories are already allocated for this month.', 'info');
     return;
   }
 
@@ -1236,8 +1313,8 @@ async function addPlanSavingsAllocation() {
   const categoryId  = String(select.value);
   const amount      = parseFloat(amountInput.value);
 
-  if (!categoryId) { alert('Please select a savings category.'); return; }
-  if (isNaN(amount) || amount <= 0) { alert('Please enter a valid amount.'); return; }
+  if (!categoryId) { showAlert('Please select a savings category.', 'warning'); return; }
+  if (isNaN(amount) || amount <= 0) { showAlert('Please enter a valid amount.', 'warning'); return; }
 
   await upsertPlanSavings(categoryId, amount);
 
@@ -1283,7 +1360,7 @@ async function saveEditPlanSavingsAllocation() {
   const amount = parseFloat(document.getElementById('edit-plan-savings-amount').value);
 
   if (isNaN(amount) || amount <= 0) {
-    alert('Please enter a valid amount.');
+    showAlert('Please enter a valid amount.', 'warning');
     return;
   }
 
@@ -1480,8 +1557,8 @@ function addItem(cat) {
   const fundedEl = document.getElementById(`${cat}-funded`);
   const funded   = (cat === 'wants' && type === 'oneoff' && fundedEl) ? fundedEl.checked : false;
 
-  if (!name)                  { alert('Please enter an item name.'); return; }
-  if (!amount || amount <= 0) { alert('Please enter a valid amount.'); return; }
+  if (!name)                  { showAlert('Please enter an item name.', 'warning'); return; }
+  if (!amount || amount <= 0) { showAlert('Please enter a valid amount.', 'warning'); return; }
 
   const data = currentMonthData();
   data.items.push({ id: generateId(), name, amount, category: cat, type, funded });
@@ -1545,8 +1622,8 @@ function saveEditItem() {
   const funded = (cat === 'wants' && type === 'oneoff')
     ? document.getElementById('edit-item-funded').checked : false;
 
-  if (!name)                  { alert('Please enter an item name.'); return; }
-  if (!amount || amount <= 0) { alert('Please enter a valid amount.'); return; }
+  if (!name)                  { showAlert('Please enter an item name.', 'warning'); return; }
+  if (!amount || amount <= 0) { showAlert('Please enter a valid amount.', 'warning'); return; }
 
   const data = currentMonthData();
   const item = data.items.find(i => i.id === id);
@@ -1911,7 +1988,7 @@ function handlePanelOverlayClick(e, id) {
 
 async function runAIReview() {
   const data = currentMonthData();
-  if (!data.income) { alert('Please set your expected income first.'); return; }
+  if (!data.income) { showAlert('Please set your expected income first.', 'info'); return; }
 
   const { needs, wants, savings, savingsPct } = calcTotals();
   const goal = data.savingsGoal ?? 0;
