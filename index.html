@@ -732,6 +732,31 @@
   </div>
 
   <!-- ══════════════════════════════════════════
+       ALERT MODAL
+  ══════════════════════════════════════════ -->
+  <div id="alert-modal-overlay" class="modal-overlay" onclick="closeAlert()">
+    <div class="modal-panel" onclick="event.stopPropagation()">
+  
+      <!-- Coloured header bar -->
+      <div id="alert-modal-header" class="alert-modal-header">
+        <span id="alert-modal-icon" class="alert-modal-icon"></span>
+        <span id="alert-modal-title" class="alert-modal-title"></span>
+      </div>
+  
+      <!-- Body -->
+      <div class="modal-body-pad">
+        <p id="alert-modal-message" class="confirm-modal-message"></p>
+      </div>
+  
+      <!-- Footer -->
+      <div class="modal-footer">
+        <button class="btn btn-primary" id="alert-modal-ok" onclick="closeAlert()">OK</button>
+      </div>
+  
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
        EDIT PLAN SAVINGS ALLOCATION PANEL
   ══════════════════════════════════════════ -->
   <div class="panel-overlay" id="edit-plan-savings-panel-overlay"
