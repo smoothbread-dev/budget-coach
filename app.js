@@ -110,17 +110,18 @@ const ALERT_CONFIG = {
 };
 
 function showAlert(message, type = 'warning') {
-  const config  = ALERT_CONFIG[type] || ALERT_CONFIG.warning;
   const overlay = document.getElementById('alert-modal-overlay');
-  const header  = document.getElementById('alert-modal-header');
-  const icon    = document.getElementById('alert-modal-icon');
   const title   = document.getElementById('alert-modal-title');
   const msg     = document.getElementById('alert-modal-message');
 
-  // Reset header classes
-  header.className = `alert-modal-header ${config.cls}`;
-  icon.textContent  = config.icon;
-  title.textContent = config.title;
+  const titles = {
+    error:   '❌ Error',
+    warning: '⚠️ Warning',
+    info:    'ℹ️ Info',
+    success: '✅ Success'
+  };
+
+  title.textContent = titles[type] || '⚠️ Warning';
   msg.textContent   = message;
 
   overlay.classList.add('open');
