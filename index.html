@@ -734,25 +734,13 @@
   <!-- ══════════════════════════════════════════
        ALERT MODAL
   ══════════════════════════════════════════ -->
-  <div id="alert-modal-overlay" class="modal-overlay" onclick="closeAlert()">
-    <div class="modal-panel" onclick="event.stopPropagation()">
-  
-      <!-- Coloured header bar -->
-      <div id="alert-modal-header" class="alert-modal-header">
-        <span id="alert-modal-icon" class="alert-modal-icon"></span>
-        <span id="alert-modal-title" class="alert-modal-title"></span>
+  <div id="alert-modal-overlay" class="panel-overlay" onclick="closeAlert()">
+    <div class="panel-box" onclick="event.stopPropagation()" style="max-width:400px">
+      <div class="panel-title" id="alert-modal-title">Warning</div>
+      <div class="panel-subtitle" id="alert-modal-message"></div>
+      <div class="panel-actions">
+        <button class="btn btn-primary" onclick="closeAlert()">OK</button>
       </div>
-  
-      <!-- Body -->
-      <div class="modal-body-pad">
-        <p id="alert-modal-message" class="confirm-modal-message"></p>
-      </div>
-  
-      <!-- Footer -->
-      <div class="modal-footer">
-        <button class="btn btn-primary" id="alert-modal-ok" onclick="closeAlert()">OK</button>
-      </div>
-  
     </div>
   </div>
 
