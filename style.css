@@ -1010,6 +1010,10 @@ body {
 .modal-body-pad  { padding: 18px 20px 10px; }
 .modal-footer    { padding: 10px 20px 18px; display: flex; justify-content: flex-end; }
 
+#alert-modal-overlay {
+  z-index: 9000;
+}
+
 /* ─────────────────────────────────────────
    SPINNER
 ───────────────────────────────────────── */
