@@ -302,7 +302,8 @@ function sumAdjustments(categoryId) {
 
 /**
  * Calculates the total saved for a category:
- * (monthly_amount × months since created_at) + sum of adjustments
+ * Sum of all plan_savings allocations for this category across all months,
+ * plus the sum of any manual adjustments (deposits/withdrawals).
  */
 function calcCategoryTotalSaved(cat) {
   const plannedTotal = planSavings
