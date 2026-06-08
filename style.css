@@ -971,6 +971,45 @@ body {
 .save-toast.visible { opacity: 1; transform: translateY(0); }
 .save-toast.saved   { color: var(--accent2); border-color: var(--accent2); }
 
+#save-toast.toast-error {
+  background: var(--danger, #e05c5c);
+  color: #fff;
+}
+
+#save-toast.toast-warning {
+  background: #c97c1a;
+  color: #fff;
+}
+
+#save-toast.toast-info {
+  background: #2a7ab5;
+  color: #fff;
+}
+
+/* ─────────────────────────────────────────
+   ALERT MODAL
+───────────────────────────────────────── */
+.alert-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px 14px;
+  border-radius: 12px 12px 0 0;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.alert-modal-header.type-error   { background: #c0392b; color: #fff; }
+.alert-modal-header.type-warning { background: #c97c1a; color: #fff; }
+.alert-modal-header.type-info    { background: #2a7ab5; color: #fff; }
+.alert-modal-header.type-success { background: #27ae60; color: #fff; }
+
+.alert-modal-icon  { font-size: 1.2rem; }
+.alert-modal-title { font-size: 1rem; font-weight: 600; }
+
+.modal-body-pad  { padding: 18px 20px 10px; }
+.modal-footer    { padding: 10px 20px 18px; display: flex; justify-content: flex-end; }
+
 /* ─────────────────────────────────────────
    SPINNER
 ───────────────────────────────────────── */
