@@ -552,9 +552,17 @@ function applyDefaults() {
   const data       = currentMonthData();
   data.income      = state.defaults.income;
   data.savingsGoal = state.defaults.savingsGoal;
+
   document.getElementById('defaults-prompt-overlay').classList.remove('open');
-  triggerSave();
+  document.body.style.overflow = '';
+
+  if (!data.income || data.income <= 0) {
+    openIncomePanel();
+    return;
+  }
+
   render();
+  triggerSave();
 }
 
 function enterOwnValues() {
