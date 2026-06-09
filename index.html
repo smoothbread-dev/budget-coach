@@ -354,11 +354,51 @@
       <!-- AI Questions Section -->
       <div class="bc-ai-questions-section card">
         <div class="section-header" style="margin-bottom: 10px;">
-          <div class="section-title">
+          <div class="section-title" id="ai-questions-section-title">
             🤔 Ask the AI something specific
             <span style="font-size: 0.75rem; font-weight: 400; color: var(--text-muted);">(optional)</span>
           </div>
         </div>
+      
+        <!-- ── ACTUAL SPENDING UPLOAD ── -->
+        <div class="actuals-upload-block">
+          <div class="actuals-upload-header">
+            <span class="actuals-upload-title">📂 Upload Actual Spending</span>
+            <span class="actuals-upload-badge bc-hidden" id="actuals-loaded-badge"></span>
+          </div>
+          <p class="actuals-upload-desc">
+            Give the AI your <strong>real spending data</strong> to compare against your plan.
+            Export your <strong>last month's</strong> (or most recent) data from Money Manager
+            as <strong>.xlsx</strong> and upload it here. Only expense transactions will be read —
+            income and transfers are ignored.
+          </p>
+      
+          <!-- Upload button row -->
+          <div class="actuals-upload-row" id="actuals-upload-row">
+            <label class="actuals-upload-btn" for="actuals-file-input">
+              📎 Choose .xlsx file
+              <input
+                type="file"
+                id="actuals-file-input"
+                accept=".xlsx"
+                style="display:none"
+                onchange="handleActualsUpload(event)"
+              />
+            </label>
+            <span class="actuals-upload-hint">Last month or most recent export recommended</span>
+          </div>
+      
+          <!-- Parsed summary preview -->
+          <div class="actuals-preview" id="actuals-preview" style="display:none">
+            <div class="actuals-preview-header">
+              <div class="actuals-preview-meta" id="actuals-preview-meta"></div>
+              <button class="actuals-remove-btn" onclick="removeActuals()">✕ Remove</button>
+            </div>
+            <div class="actuals-preview-cats" id="actuals-preview-cats"></div>
+          </div>
+        </div>
+      
+        <div class="actuals-divider"></div>
       
         <p class="bc-tab-description" style="margin-bottom: 12px;">
           Have a specific question about your plan? Add up to as many as you need — the AI will address each one directly.
@@ -366,7 +406,6 @@
       
         <!-- Dynamic questions list -->
         <div id="ai-questions-list">
-          <!-- First question (always shown, no remove button) -->
           <div class="ai-question-row" id="ai-question-row-1">
             <div class="ai-question-input-wrap">
               <textarea
