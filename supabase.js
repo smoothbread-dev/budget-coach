@@ -343,6 +343,13 @@ document.addEventListener('click', async (e) => {
     document.getElementById('auth-password').disabled = false;  
     document.getElementById('toggle-password').disabled = false;
   }
+
+  if (e.target.id === 'change-password-btn') {
+    // Close the dropdown first, then open the modal
+    const dropdown = document.getElementById('user-dropdown');
+    if (dropdown) dropdown.classList.remove('open');
+    openChangePasswordModal();
+  }
 });
 
 // ─────────────────────────────────────────
