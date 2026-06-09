@@ -134,12 +134,14 @@ function showAlert(message, type = 'warning', actionButton = null) {
   // Rebuild action buttons
   actions.innerHTML = '';
 
-  // OK / dismiss button always present
-  const okBtn = document.createElement('button');
-  okBtn.className   = 'btn btn-secondary';
-  okBtn.textContent = 'OK';
-  okBtn.onclick     = closeAlert;
-  actions.appendChild(okBtn);
+  // OK / dismiss button — only shown when no custom action button is provided
+  if (!actionButton) {
+    const okBtn = document.createElement('button');
+    okBtn.className   = 'btn btn-primary';
+    okBtn.textContent = 'OK';
+    okBtn.onclick     = closeAlert;
+    actions.appendChild(okBtn);
+  }
 
   // Optional action button (e.g. "Go to Savings")
   if (actionButton) {
