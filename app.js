@@ -2238,6 +2238,13 @@ function resetPasswordToggle() {
 // ─────────────────────────────────────────
 // CHANGE PASSWORD MODAL
 // ─────────────────────────────────────────
+function openChangePasswordModal() {
+  const modal = document.getElementById('change-password-modal');
+  if (modal) {
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+}
 
 function closeChangePasswordModal() {
   const modal = document.getElementById('change-password-modal');
