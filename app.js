@@ -599,7 +599,6 @@ async function initApp() {
   renderActualsPreview();
   updateActualsBadge();
 }
-}
 
 // ─────────────────────────────────────────
 // FIRST-TIME SETUP
