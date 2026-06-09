@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────
-const GROQ_API_KEY = 'GROQ_API_KEY_PLACEHOLDER';
+//const GROQ_API_KEY = 'GROQ_API_KEY_PLACEHOLDER';
 
 // ─────────────────────────────────────────
 // CONSTANTS
@@ -2262,10 +2262,10 @@ async function runAIReview() {
   card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   try {
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
-      body:    JSON.stringify({
+    const res = await fetch('https://groq-proxy.henryooi0077.workers.dev', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
         model:       'llama-3.1-8b-instant',
         messages:    [{ role: 'user', content: prompt }],
         temperature: 0.7,
