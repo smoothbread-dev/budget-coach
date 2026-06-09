@@ -215,24 +215,35 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
   const resendBtn = document.getElementById('resend-btn');
   const submitBtn = document.getElementById('auth-submit-btn');
 
+  // Helper to re-enable all auth fields
+  function setFieldsDisabled(disabled) {
+    document.getElementById('auth-email').disabled    = disabled;
+    document.getElementById('auth-password').disabled = disabled;
+    document.getElementById('toggle-password').disabled = disabled;
+  }
+
+  // Helper to show error inline
+  function showAuthError(message) {
+    errorEl.textContent = message;
+    errorEl.classList.remove('bc-hidden');
+    errorEl.style.display = 'block';
+  }
+
   // Clear previous messages
+  errorEl.classList.add('bc-hidden');
   errorEl.style.display = 'none';
   infoEl.style.display  = 'none';
   resendBtn.classList.add('bc-hidden');
 
   if (!email || !password) {
-    errorEl.textContent   = 'Please enter both email and password.';
-    errorEl.style.display = 'block';
+    showAuthError('Please enter both email and password.');
     return;
   }
 
   // ── LOADING STATE ON ──
   submitBtn.disabled    = true;
   submitBtn.textContent = isSignUp ? '⏳ Creating account…' : '⏳ Signing in…';
-
-  document.getElementById('auth-email').disabled = true; 
-  document.getElementById('auth-password').disabled = true;  
-  document.getElementById('toggle-password').disabled = true;
+  setFieldsDisabled(true);
 
   if (isSignUp) {
     // ── SIGN UP ──
@@ -245,11 +256,9 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
     });
 
     if (error) {
-      errorEl.textContent   = error.message;
-      errorEl.style.display = 'block';
+      showAuthError(error.message);
     } else if (data?.user?.identities?.length === 0) {
-      errorEl.textContent   = 'An account with this email already exists. Please sign in instead.';
-      errorEl.style.display = 'block';
+      showAuthError('An account with this email already exists. Please sign in instead.');
     } else {
       document.getElementById('auth-email').value    = '';
       document.getElementById('auth-password').value = '';
@@ -274,8 +283,7 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
         resendBtn.classList.remove('bc-hidden');
         resendBtn.dataset.email = email;
       } else {
-        errorEl.textContent   = error.message;
-        errorEl.style.display = 'block';
+        showAuthError(error.message);
       }
     } else {
       infoEl.style.display = 'none';
@@ -285,6 +293,7 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
   // ── LOADING STATE OFF ──
   submitBtn.disabled    = false;
   submitBtn.textContent = isSignUp ? 'Sign Up' : 'Sign In';
+  setFieldsDisabled(false);  // ← always re-enable fields after any outcome
 });
 
 // ─────────────────────────────────────────
