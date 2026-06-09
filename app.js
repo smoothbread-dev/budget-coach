@@ -2181,6 +2181,9 @@ function buildPrompt() {
 
   let prompt = `You are a friendly but honest personal finance coach. The user is planning their budget BEFORE their salary arrives. Analyse their expected budget and give a concise, actionable coaching session.
 
+REGIONAL CONTEXT:
+This user is based in Malaysia. Please ensure all financial advice, product references, loan structures, tax considerations, and spending norms are appropriate and relevant to the Malaysian context. Avoid assumptions based on Western (US/UK/AU) financial systems or products.
+
 PLAN SUMMARY:
 - Expected Income: ${fmt(data.income)}
 - Expected Needs: ${fmt(needs)} (${((needs / data.income) * 100).toFixed(1)}% of income)
