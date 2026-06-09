@@ -109,10 +109,17 @@ const ALERT_CONFIG = {
   success: { icon: '✅', title: 'Success', cls: 'type-success' }
 };
 
-function showAlert(message, type = 'warning') {
-  const overlay = document.getElementById('alert-modal-overlay');
-  const title   = document.getElementById('alert-modal-title');
-  const msg     = document.getElementById('alert-modal-message');
+/**
+ * Displays the alert modal with an optional action button.
+ * @param {string} message - The message to display.
+ * @param {string} type - 'error' | 'warning' | 'info' | 'success'
+ * @param {{ label: string, onClick: function } | null} actionButton - Optional action button config.
+ */
+function showAlert(message, type = 'warning', actionButton = null) {
+  const overlay  = document.getElementById('alert-modal-overlay');
+  const title    = document.getElementById('alert-modal-title');
+  const msg      = document.getElementById('alert-modal-message');
+  const actions  = overlay.querySelector('.panel-actions');
 
   const titles = {
     error:   '❌ Error',
@@ -123,6 +130,25 @@ function showAlert(message, type = 'warning') {
 
   title.textContent = titles[type] || '⚠️ Warning';
   msg.textContent   = message;
+
+  // Rebuild action buttons
+  actions.innerHTML = '';
+
+  // OK / dismiss button always present
+  const okBtn = document.createElement('button');
+  okBtn.className   = 'btn btn-secondary';
+  okBtn.textContent = 'OK';
+  okBtn.onclick     = closeAlert;
+  actions.appendChild(okBtn);
+
+  // Optional action button (e.g. "Go to Savings")
+  if (actionButton) {
+    const actionBtn = document.createElement('button');
+    actionBtn.className   = 'btn btn-primary';
+    actionBtn.textContent = actionButton.label;
+    actionBtn.onclick     = actionButton.onClick;
+    actions.appendChild(actionBtn);
+  }
 
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1274,16 +1300,38 @@ function togglePlanSavingsForm() {
   const amountInput = document.getElementById('plan-savings-amount');
   const hintInput   = document.getElementById('plan-savings-monthly-hint');
 
+  // Scenario A — No savings categories exist at all
+  if (savingsCategories.length === 0) {
+    showAlert(
+      "You haven't created any savings categories yet. Head to the Savings tab to add one!",
+      'info',
+      {
+        label: '💰 Go to Savings',
+        onClick: () => {
+          closeAlert();
+          closePanel('edit-plan-savings-panel-overlay');
+          document.getElementById('plan-savings-form').style.display = 'none';
+          switchTab('savings');
+        }
+      }
+    );
+    return;
+  }
+
+  // Scenario B — Categories exist but all already allocated this month
   if (available.length === 0) {
-    showAlert('All savings categories are already allocated for this month.', 'info');
+    showAlert(
+      'All your savings categories are already allocated for this month. Edit or remove an existing allocation below.',
+      'info'
+    );
     return;
   }
 
   select.innerHTML = `<option value="">— Select a category —</option>` +
     available.map(c => `<option value="${c.id}">${escHtml(c.name)}</option>`).join('');
 
-  amountInput.value  = '';
-  hintInput.value    = '';
+  amountInput.value = '';
+  hintInput.value   = '';
   form.style.display = '';
 }
 
