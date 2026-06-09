@@ -2695,12 +2695,24 @@ function clearAIQuestions() {
 // BUILD PROMPT (extracted, reusable)
 // ─────────────────────────────────────────
 function buildPrompt() {
-  // ── Plan data ──────────────────────────────────────────────
-  const planMonth  = monthLabel(state.currentMonth, state.currentYear);
-  const income     = getIncome();
-  const expenses   = getPlanExpenses();
-  const balance    = income - expenses;
-  const categories = getPlanCategories(); // your existing helper
+  const planMonth = monthLabel(state.currentMonth, state.currentYear);
+  const data      = currentMonthData();
+  const { needs, wants, funded, gross, savings } = calcTotals();
+  const income    = data.income;
+  const expenses  = needs + wants;
+  const balance   = savings;
+  const items     = data.items || [];
+
+  // Build category breakdown
+  const needsItems = items.filter(i => i.category === 'needs');
+  const wantsItems = items.filter(i => i.category === 'wants');
+
+  const formatItems = (arr) =>
+    arr.length === 0
+      ? '  (none)'
+      : arr.map(i => `  - ${i.name}: ${fmt(i.amount)}${i.funded ? ' [funded]' : ''}`).join('\n');
+
+  const categories = `Needs:\n${formatItems(needsItems)}\nWants:\n${formatItems(wantsItems)}`;
 
   let prompt = `You are a friendly but direct personal finance coach. 
 The user is planning their budget for ${planMonth}.
@@ -2860,7 +2872,7 @@ function parseAIResponse(raw) {
 function showAIResult(raw) {
   const { coaching, comparison, questions } = parseAIResponse(raw);
 
-  const resultContainer = document.getElementById('ai-result-container');
+  const resultContainer = document.getElementById('ai-review-content');
   resultContainer.innerHTML = '';
 
   // ── Card builder helper ──────────────────────────────────
