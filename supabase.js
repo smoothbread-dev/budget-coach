@@ -387,10 +387,11 @@ function clearUserAvatar() {
 // ─────────────────────────────────────────
 
 document.getElementById('forgot-password-btn').addEventListener('click', async () => {
-  const email    = document.getElementById('auth-email').value.trim();
-  const errorEl  = document.getElementById('auth-error');
-  const infoEl   = document.getElementById('auth-info');
-  const infoText = document.getElementById('auth-info-text');
+  const email      = document.getElementById('auth-email').value.trim();
+  const errorEl    = document.getElementById('auth-error');
+  const infoEl     = document.getElementById('auth-info');
+  const infoText   = document.getElementById('auth-info-text');
+  const forgotBtn  = document.getElementById('forgot-password-btn');
 
   // Clear previous messages
   errorEl.classList.add('bc-hidden');
@@ -405,13 +406,17 @@ document.getElementById('forgot-password-btn').addEventListener('click', async (
     return;
   }
 
+  // ── LOADING STATE ON ──
+  forgotBtn.disabled    = true;
+  forgotBtn.textContent = '⏳ Sending reset email…';
+
   try {
     const { error } = await sb.auth.resetPasswordForEmail(email, {
       redirectTo: 'https://smoothbread-dev.github.io/budget-coach/'
     });
 
     if (error) {
-      errorEl.textContent   = error.message || 'Failed to send reset email. Please try again.';
+      errorEl.textContent = error.message || 'Failed to send reset email. Please try again.';
       errorEl.classList.remove('bc-hidden');
       errorEl.style.display = 'block';
       return;
@@ -423,9 +428,14 @@ document.getElementById('forgot-password-btn').addEventListener('click', async (
     infoEl.style.display = 'block';
 
   } catch (err) {
-    errorEl.textContent   = 'An unexpected error occurred. Please try again.';
+    errorEl.textContent = 'An unexpected error occurred. Please try again.';
     errorEl.classList.remove('bc-hidden');
     errorEl.style.display = 'block';
     console.error('Forgot password error:', err);
+
+  } finally {
+    // ── LOADING STATE OFF ── always runs regardless of success or error
+    forgotBtn.disabled    = false;
+    forgotBtn.textContent = 'Forgot password?';
   }
 });
