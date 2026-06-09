@@ -2646,19 +2646,19 @@ function buildPrompt() {
   // ── Build the ordered instruction list dynamically ──
   let stepNum = 1;
   const steps = [];
-  steps.push(`${stepNum++}. Overall Assessment — use header: [Overall Assessment]`);
-  steps.push(`${stepNum++}. 2-3 specific actionable coaching tips with RM amounts — use header: [Coaching Tips]`);
-  steps.push(`${stepNum++}. Comment on savings allocations progress — use header: [Savings Allocations]`);
+  steps.push(`${stepNum++}. Overall Assessment — use header: [HEADER: Overall Assessment]`);
+  steps.push(`${stepNum++}. 2-3 specific actionable coaching tips with RM amounts — use header: [HEADER: Coaching Tips]`);
+  steps.push(`${stepNum++}. Comment on savings allocations progress — use header: [HEADER: Savings Allocations]`);
 
   if (actualsSection) {
-    steps.push(`${stepNum++}. Actual vs. Planned comparison as bullet points — use header: [Actual vs. Planned]`);
+    steps.push(`${stepNum++}. Actual vs. Planned comparison as bullet points — use header: [HEADER: Actual vs. Planned]`);
   }
 
   if (userQuestions.length > 0) {
-    steps.push(`${stepNum++}. Address each user question directly — use header: [Your Questions]`);
+    steps.push(`${stepNum++}. Address each user question directly — use header: [HEADER: Your Questions]`);
   }
 
-  steps.push(`${stepNum++}. Encouraging closing remark — use header: [Final Note]`);
+  steps.push(`${stepNum++}. Encouraging closing remark — use header: [HEADER: Final Note]`);
 
   const instructionList = steps.join('\n');
 
@@ -2672,8 +2672,8 @@ FORMATTING RULES — FOLLOW STRICTLY:
 - Do NOT use Markdown tables (no pipe characters, no | --- | separators).
 - Do NOT use Markdown bold (**text**) or italic (*text*) syntax.
 - Do NOT use # or ## for headers.
-- For section headers, use this exact format: [Your Header Title Here]
-  Example: [Overall Assessment]
+- For section headers, use this exact format: [HEADER: Your Header Title Here]
+  Example: [HEADER: Overall Assessment]
 - For the Actual vs. Planned section, present comparisons as plain bullet points:
   • Food: Planned RM 500 → Actual RM 620 (RM 120 over)
 - Use plain text only for all other content. Structure with short paragraphs and bullet points (• or -).
