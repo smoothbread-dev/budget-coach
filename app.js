@@ -1100,6 +1100,21 @@ function renderSavingsCategoriesList() {
     const adjustments = getAdjustmentsForCategory(cat.id);
     const adjSum      = sumAdjustments(cat.id);
 
+    // ── Months left calculation ──────────────────────────
+    const monthlyAmt  = Number(cat.monthly_amount);
+    const remaining   = Math.max(0, goalAmount - totalSaved);
+
+    let monthsLeftHTML;
+    if (pct >= 100) {
+      monthsLeftHTML = `<span class="months-left-value goal-reached">🎉 Goal reached!</span>`;
+    } else if (monthlyAmt <= 0) {
+      monthsLeftHTML = `<span class="months-left-value">—</span>`;
+    } else {
+      const monthsLeft = (remaining / monthlyAmt).toFixed(1);
+      monthsLeftHTML   = `<span class="months-left-value">${monthsLeft} month${monthsLeft === '1.0' ? '' : 's'} left</span>`;
+    }
+    // ────────────────────────────────────────────────────
+
     // Progress bar colour
     const barClass = pct >= 100 ? 'met' : pct >= 70 ? 'close' : 'under';
 
@@ -1154,6 +1169,12 @@ function renderSavingsCategoriesList() {
               ${adjSum >= 0 ? '+' : ''}${fmt(adjSum)}
             </span>
           </div>` : ''}
+        </div>
+
+        <!-- Months left line -->
+        <div class="months-left-row">
+          <span class="months-left-label">📅 Est. time to goal</span>
+          ${monthsLeftHTML}
         </div>
 
         <!-- Progress bar -->
