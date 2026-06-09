@@ -43,39 +43,36 @@ document.addEventListener('DOMContentLoaded', () => {
   
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'PASSWORD_RECOVERY') {
+      currentUser = session.user;
       showApp();
       await new Promise(resolve => setTimeout(resolve, 0));
       initUserMenu();
-      setUserAvatar(session.user.email);
+      setUserAvatar(currentUser.email);
       await initApp();
-      // Open the change password modal automatically
+  
+      // Automatically open the Change Password modal
       const modal = document.getElementById('change-password-modal');
-      if (modal) {
-        modal.classList.remove('hidden');
-      }
-      return;
+      if (modal) modal.classList.remove('hidden');
+      return; // ← stop here, don't fall through
     }
-    
+  
     // Guard against ghost events with no user
     if (event === 'INITIAL_SESSION' && !session?.user) {
       showAuth();
       return;
     }
-
+  
     if (session?.user) {
       currentUser = session.user;
-
+  
       if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         showApp();
-
-        // Wait for DOM injection to complete before wiring up UI
-        await new Promise(resolve => setTimeout(resolve, 0)); // 👈 yields to browser
-        
+        await new Promise(resolve => setTimeout(resolve, 0));
         initUserMenu();
         setUserAvatar(currentUser.email);
         await initApp();
       }
-
+  
     } else {
       currentUser = null;
       appInitialised = false;
