@@ -2351,7 +2351,6 @@ function parseActualsXlsx(file) {
 // ─────────────────────────────────────────
 // ACTUALS — HANDLE UPLOAD
 // ─────────────────────────────────────────
-
 async function handleActualsUpload(event) {
   const file = event.target.files?.[0];
   if (!file) return;
@@ -2374,19 +2373,22 @@ async function handleActualsUpload(event) {
 
   uploadRow.innerHTML = origHTML;
 
-  // ── Month picker — auto-detected as default, user can change ──
+  // ── Month picker modal ─────────────────────────────────────
   const confirmedMonthKey = await showMonthPickerModal(summary.monthKey);
   if (!confirmedMonthKey) return; // user cancelled
 
   summary.monthKey = confirmedMonthKey;
 
-  // ── Check for existing data for this month ─────────────────
+  // Update dateRangeLabel month reference if month was changed
+  const [yr, mo] = confirmedMonthKey.split('-');
+  const pickedLabel = monthLabel(parseInt(mo) - 1, parseInt(yr));
+  summary.monthLabel = pickedLabel;
+
+  // ── Check for existing data ────────────────────────────────
   const existing = window._allActuals?.[summary.monthKey];
   if (existing) {
-    const [yr, mo]  = summary.monthKey.split('-');
-    const lbl       = monthLabel(parseInt(mo) - 1, parseInt(yr));
     const confirmed = await showConfirm(
-      `You already have actual spending data for ${lbl}. Replace it with this new upload?`,
+      `You already have actual spending data for ${pickedLabel}. Replace it with this new upload?`,
       'Replace'
     );
     if (!confirmed) return;
@@ -2406,28 +2408,35 @@ async function handleActualsUpload(event) {
 
 function showMonthPickerModal(defaultMonthKey) {
   return new Promise((resolve) => {
+
+    // Build year/month options
     const now       = new Date();
     const thisYear  = now.getFullYear();
-    const startYear = 2018;
+    const startYear = 2020; // adjust if needed
 
+    // Parse default
     const [defY, defM] = defaultMonthKey.split('-').map(Number);
 
-    // Build year options — newest first
+    // Build year select
     let yearOptions = '';
-    for (let y = thisYear + 1; y >= startYear; y--) {
+    for (let y = thisYear; y >= startYear; y--) {
       yearOptions += `<option value="${y}" ${y === defY ? 'selected' : ''}>${y}</option>`;
     }
 
-    // Build month options
+    // Build month select
+    const MONTH_NAMES = [
+      'January','February','March','April','May','June',
+      'July','August','September','October','November','December'
+    ];
     let monthOptions = '';
-    MONTHS.forEach((name, idx) => {
+    MONTH_NAMES.forEach((name, idx) => {
       const val = String(idx + 1).padStart(2, '0');
       monthOptions += `<option value="${val}" ${(idx + 1) === defM ? 'selected' : ''}>${name}</option>`;
     });
 
-    // Inject modal
+    // Inject modal HTML
     const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay month-picker-overlay';
+    overlay.className = 'modal-overlay';
     overlay.id        = 'month-picker-overlay';
     overlay.innerHTML = `
       <div class="modal-box month-picker-modal">
@@ -2436,9 +2445,9 @@ function showMonthPickerModal(defaultMonthKey) {
         </div>
         <div class="modal-body">
           <p class="month-picker-desc">
-            We detected your data is from
-            <strong>${MONTHS[defM - 1]} ${defY}</strong>.
-            Confirm or adjust the month this data belongs to.
+            We detected your data is from 
+            <strong>${MONTH_NAMES[defM - 1]} ${defY}</strong>.
+            Confirm or change the month this data belongs to.
           </p>
           <div class="month-picker-selects">
             <select id="month-picker-month" class="form-input month-picker-select">
@@ -2450,8 +2459,8 @@ function showMonthPickerModal(defaultMonthKey) {
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-secondary" id="month-picker-cancel">Cancel</button>
-          <button class="btn btn-primary"   id="month-picker-confirm">Confirm Month</button>
+          <button class="btn btn-ghost" id="month-picker-cancel">Cancel</button>
+          <button class="btn btn-primary" id="month-picker-confirm">Confirm</button>
         </div>
       </div>
     `;
@@ -2465,7 +2474,8 @@ function showMonthPickerModal(defaultMonthKey) {
     };
 
     document.getElementById('month-picker-cancel').onclick = () => {
-      cleanup(); resolve(null);
+      cleanup();
+      resolve(null);
     };
 
     document.getElementById('month-picker-confirm').onclick = () => {
@@ -2475,11 +2485,16 @@ function showMonthPickerModal(defaultMonthKey) {
       resolve(`${y}-${m}`);
     };
 
+    // Click outside to cancel
     overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) { cleanup(); resolve(null); }
+      if (e.target === overlay) {
+        cleanup();
+        resolve(null);
+      }
     });
   });
 }
+
 // ─────────────────────────────────────────
 // ACTUALS — REMOVE
 // ─────────────────────────────────────────
