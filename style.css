@@ -1813,6 +1813,146 @@ body {
   font-family:   'Inter', system-ui, sans-serif;
   margin-bottom: 4px;
 }
+/* ─────────────────────────────────────────
+   AI RESULT CARDS
+───────────────────────────────────────── */
+.ai-result-card {
+  background:    var(--surface2);
+  border:        1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow:      hidden;
+  margin-bottom: 12px;
+}
+
+.ai-result-card:last-of-type {
+  margin-bottom: 0;
+}
+
+.ai-result-card-header {
+  display:       flex;
+  align-items:   center;
+  gap:           8px;
+  padding:       10px 14px;
+  background:    rgba(108,99,255,0.06);
+  border-bottom: 1px solid var(--border);
+}
+
+.ai-result-card-icon  { font-size: 1rem; }
+
+.ai-result-card-title {
+  font-size:      0.85rem;
+  font-weight:    700;
+  color:          var(--text);
+  letter-spacing: 0.01em;
+}
+
+.ai-result-card-body {
+  padding:     12px 14px;
+  font-size:   0.84rem;
+  line-height: 1.7;
+  color:       var(--text);
+}
+
+/* Comparison card — green accent */
+.ai-result-card--comparison {
+  border-color: rgba(67,224,151,0.3);
+}
+.ai-result-card--comparison .ai-result-card-header {
+  background:    rgba(67,224,151,0.07);
+  border-bottom-color: rgba(67,224,151,0.2);
+}
+
+/* Questions card — purple accent */
+.ai-result-card--questions {
+  border-color: rgba(108,99,255,0.3);
+}
+.ai-result-card--questions .ai-result-card-header {
+  background:    rgba(108,99,255,0.09);
+  border-bottom-color: rgba(108,99,255,0.2);
+}
+
+/* Markdown inside cards */
+.ai-result-card-body p            { margin: 0 0 8px; }
+.ai-result-card-body p:last-child { margin-bottom: 0; }
+.ai-result-card-body ul,
+.ai-result-card-body ol           { padding-left: 18px; margin: 0 0 8px; }
+.ai-result-card-body li           { margin-bottom: 3px; }
+.ai-result-card-body strong       { color: var(--text); }
+
+/* ─────────────────────────────────────────
+   MONTH PICKER MODAL
+───────────────────────────────────────── */
+.month-picker-overlay {
+  position:        fixed;
+  inset:           0;
+  background:      rgba(0,0,0,0.55);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  z-index:         9999;
+  opacity:         0;
+  transition:      opacity 0.2s;
+}
+
+.month-picker-overlay.modal-overlay--visible {
+  opacity: 1;
+}
+
+.month-picker-modal {
+  background:    var(--surface);
+  border:        1px solid var(--border);
+  border-radius: var(--radius);
+  width:         100%;
+  max-width:     360px;
+  padding:       0;
+  overflow:      hidden;
+}
+
+.modal-header {
+  padding:       14px 18px;
+  border-bottom: 1px solid var(--border);
+  background:    var(--surface2);
+}
+
+.modal-title {
+  font-size:   0.9rem;
+  font-weight: 700;
+  color:       var(--text);
+}
+
+.modal-body {
+  padding: 18px;
+}
+
+.modal-footer {
+  display:         flex;
+  justify-content: flex-end;
+  gap:             10px;
+  padding:         14px 18px;
+  border-top:      1px solid var(--border);
+  background:      var(--surface2);
+}
+
+.month-picker-desc {
+  font-size:     0.83rem;
+  color:         var(--text-muted);
+  line-height:   1.6;
+  margin-bottom: 14px;
+}
+
+.month-picker-desc strong {
+  color: var(--text);
+}
+
+.month-picker-selects {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.month-picker-select {
+  width: 100%;
+}
 
 /* ─────────────────────────────────────────
    AI REVIEW
