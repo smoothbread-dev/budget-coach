@@ -362,8 +362,11 @@ document.getElementById('forgot-password-btn').addEventListener('click', async (
   const errorEl = document.getElementById('auth-error');
   const infoEl  = document.getElementById('auth-info');
   const infoText = document.getElementById('auth-info-text');
-  errorEl.classList.add('bc-hidden');
-  infoEl.classList.add('bc-hidden');
+  errorEl.style.display = 'none';
+  errorEl.style.display = 'block';
+  
+  infoEl.style.display = 'none';
+  infoEl.style.display = 'block';
 
   if (!email) {
     errorEl.textContent = 'Please enter your email address first.';
@@ -372,7 +375,7 @@ document.getElementById('forgot-password-btn').addEventListener('click', async (
   }
 
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin  // adjust if you have a dedicated reset page
     });
 
