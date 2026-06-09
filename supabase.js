@@ -263,6 +263,7 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
       document.getElementById('auth-email').value    = '';
       document.getElementById('auth-password').value = '';
       infoText.textContent = '✅ Account created! Please check your inbox and confirm your email address before signing in.';
+      infoEl.classList.remove('bc-hidden');
       infoEl.style.display = 'block';
       resendBtn.classList.remove('bc-hidden');
       resendBtn.dataset.email = email;
@@ -279,6 +280,7 @@ document.getElementById('auth-submit-btn').addEventListener('click', async () =>
 
       if (isUnverified) {
         infoText.textContent = '📬 Your email address hasn\'t been verified yet. Please check your inbox (or spam folder) and click the confirmation link before signing in.';
+        infoEl.classList.remove('bc-hidden');
         infoEl.style.display = 'block';
         resendBtn.classList.remove('bc-hidden');
         resendBtn.dataset.email = email;
