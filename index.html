@@ -387,7 +387,17 @@
 
       <!-- AI Review -->
       <div id="ai-review-card" class="ai-review-card" style="display:none">
-        <div class="card-title">🤖 Coach's Advice</div>
+        <div class="ai-review-header">
+          <div class="card-title">🤖 Coach's Advice</div>
+          <button
+            class="btn btn-secondary btn-sm"
+            onclick="openPromptPreview()"
+            id="prompt-preview-btn"
+            title="Preview the prompt sent to the AI"
+          >
+            👁️ Preview Prompt
+          </button>
+        </div>
         <div id="ai-review-content"></div>
       </div>
 
@@ -787,6 +797,28 @@
       <div class="panel-actions">
         <button class="btn btn-primary" onclick="closeAlert()">OK</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       PROMPT PREVIEW MODAL
+  ══════════════════════════════════════════ -->
+  <div class="panel-overlay" id="prompt-preview-overlay">
+    <div class="panel-box prompt-preview-box" onclick="event.stopPropagation()">
+  
+      <div class="panel-title">
+        👁️ Prompt Preview
+      </div>
+      <div class="panel-subtitle">
+        This is the exact prompt that will be sent to the AI coach. Read-only.
+      </div>
+  
+      <pre id="prompt-preview-content" class="prompt-preview-pre"></pre>
+  
+      <div class="panel-actions">
+        <button class="btn btn-secondary" onclick="closePromptPreview()">Close</button>
+      </div>
+  
     </div>
   </div>
 
