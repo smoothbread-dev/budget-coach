@@ -2269,6 +2269,7 @@ async function submitChangePassword() {
   const confirmPass = document.getElementById('cp-confirm-password').value;
   const errorEl     = document.getElementById('cp-error');
   const submitBtn   = document.querySelector('#change-password-modal .btn-primary');
+  const cancelBtn   = document.querySelector('#change-password-modal .btn-secondary');
 
   errorEl.classList.add('hidden');
 
@@ -2288,6 +2289,7 @@ async function submitChangePassword() {
     submitBtn.disabled    = true;
     submitBtn.textContent = '⏳ Updating…';
   }
+  if (cancelBtn) cancelBtn.disabled = true;
 
   const { error } = await sb.auth.updateUser({ password: newPass });
 
@@ -2295,6 +2297,7 @@ async function submitChangePassword() {
     submitBtn.disabled    = false;
     submitBtn.textContent = 'Update Password';
   }
+  if (cancelBtn) cancelBtn.disabled = false;
 
   if (error) {
     errorEl.textContent = error.message || 'Failed to update password.';
