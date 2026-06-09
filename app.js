@@ -2767,7 +2767,7 @@ async function runAIReview() {
         model:       'llama-3.1-8b-instant',
         messages:    [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens:  600
+        max_tokens:  1500
       })
     });
 
