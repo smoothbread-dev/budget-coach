@@ -40,9 +40,14 @@ function startKeepAlive() {
  * Routes to the app on login and back to the auth screen on logout.
  */
 document.addEventListener('DOMContentLoaded', () => {
-  
+
+  // ✅ Detect password recovery from URL hash BEFORE onAuthStateChange
+  const hash = window.location.hash;
+  const isRecovery = hash.includes('type=recovery');
+
   sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'PASSWORD_RECOVERY') {
+
+    if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && isRecovery)) {
       currentUser = session.user;
       showApp();
       await new Promise(resolve => setTimeout(resolve, 0));
@@ -50,24 +55,23 @@ document.addEventListener('DOMContentLoaded', () => {
       setUserAvatar(currentUser.email);
       await initApp();
 
-      console.log('PASSWORD_RECOVERY event fired');
-      console.log('Modal found:', document.getElementById('change-password-modal'));
-      
-      // Automatically open the Change Password modal
+      // Give initApp time to render the modal into the DOM
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       const modal = document.getElementById('change-password-modal');
+      console.log('Recovery modal found:', modal); // debug
       if (modal) modal.classList.remove('hidden');
-      return; // ← stop here, don't fall through
+      return;
     }
-  
+
     // Guard against ghost events with no user
     if (event === 'INITIAL_SESSION' && !session?.user) {
       showAuth();
       return;
     }
-  
+
     if (session?.user) {
       currentUser = session.user;
-  
       if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
         showApp();
         await new Promise(resolve => setTimeout(resolve, 0));
@@ -75,7 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setUserAvatar(currentUser.email);
         await initApp();
       }
-  
     } else {
       currentUser = null;
       appInitialised = false;
