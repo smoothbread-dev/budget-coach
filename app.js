@@ -2596,85 +2596,73 @@ function clearAIQuestions() {
 // ─────────────────────────────────────────
 // BUILD PROMPT (extracted, reusable)
 // ─────────────────────────────────────────
-
 function buildPrompt() {
-  const data = currentMonthData();
-  if (!data.income) return null;
+  // ── Plan data ──────────────────────────────────────────────
+  const planMonth  = monthLabel(state.currentMonth, state.currentYear);
+  const income     = getIncome();
+  const expenses   = getPlanExpenses();
+  const balance    = income - expenses;
+  const categories = getPlanCategories(); // your existing helper
 
-  const { needs, wants, savings, savingsPct } = calcTotals();
-  const goal = data.savingsGoal ?? 0;
+  let prompt = `You are a friendly but direct personal finance coach. 
+The user is planning their budget for ${planMonth}.
 
-  const goalContext = goal > 0
-    ? `The user's savings goal is ${goal}%. They are projecting ${savingsPct.toFixed(1)}% savings.\n${
-        savingsPct < goal
-          ? `They are ${(goal - savingsPct).toFixed(1)}% BELOW their goal. Be direct and specific about which wants to reduce.`
-          : `They have MET their savings goal. Be encouraging but still offer optimisation tips.`}`
-    : 'The user has not set a savings goal.';
+BUDGET PLAN — ${planMonth}:
+Total Income:   ${fmt(income)}
+Total Planned Expenses: ${fmt(expenses)}
+Remaining Balance: ${fmt(balance)}
 
-  const fundedItems = (data.items || []).filter(i => i.funded);
-  const fundedNote  = fundedItems.length > 0
-    ? `Note: These items are funded from pre-saved money, NOT this month's income — do NOT flag them as concerns: ${fundedItems.map(i => i.name).join(', ')}.`
-    : '';
+Expense Breakdown:
+${categories}`;
 
-  const itemList = (data.items || [])
-    .filter(i => !i.funded)
-    .map(i => `- ${i.name} (${i.category}, ${i.type}): ${fmt(i.amount)}`)
-    .join('\n');
-
-  const currentAllocations = getPlanSavingsForCurrentMonth();
-  const totalAllocated     = getTotalAllocatedForCurrentMonth();
-
-  const savingsAllocationLines = currentAllocations.length > 0
-    ? currentAllocations.map(p => {
-        const cat        = savingsCategories.find(c => String(c.id) === String(p.savings_category_id));
-        const catName    = cat?.name ?? p.category_name ?? 'Unknown';
-        const totalSaved = cat ? calcCategoryTotalSaved(cat) : 0;
-        const goalAmt    = cat ? Number(cat.goal_amount) : 0;
-        const pct        = goalAmt > 0 ? ((totalSaved / goalAmt) * 100).toFixed(1) : 'N/A';
-        return `- ${catName}: ${fmt(p.allocated_amount)} allocated this month (${fmt(totalSaved)} saved of ${fmt(goalAmt)} goal — ${pct}% complete)`;
-      }).join('\n')
-    : 'No savings allocations set for this month.';
-
-  let prompt = `You are a friendly but honest personal finance coach. The user is planning their budget BEFORE their salary arrives. Analyse their expected budget and give a concise, actionable coaching session.
-
-REGIONAL CONTEXT:
-This user is based in Malaysia. Please ensure all financial advice, product references, loan structures, tax considerations, and spending norms are appropriate and relevant to the Malaysian context. Avoid assumptions based on Western (US/UK/AU) financial systems or products.
-
-PLAN SUMMARY:
-- Expected Income: ${fmt(data.income)}
-- Expected Needs: ${fmt(needs)} (${((needs / data.income) * 100).toFixed(1)}% of income)
-- Expected Wants: ${fmt(wants)} (${((wants / data.income) * 100).toFixed(1)}% of income)
-- Projected Savings: ${fmt(savings)} (${savingsPct.toFixed(1)}% of income)
-
-${goalContext}
-${fundedNote}
-
-PLANNED EXPENSES:
-${itemList || 'No items added yet.'}
-
-SAVINGS ALLOCATIONS THIS MONTH (${fmt(totalAllocated)} total allocated):
-${savingsAllocationLines}
-
-Please provide:
-1. A brief overall assessment of this plan (2-3 sentences)
-2. 2-3 specific, actionable coaching tips with RM amounts where relevant
-3. A short comment on their savings allocations — are they on track for their goals? Any categories falling behind?
-4. One encouraging closing remark to motivate them
-
-Keep the tone warm, coach-like, and honest. Format clearly with short paragraphs.`;
-
-  // Inject actuals if available
+  // ── Actuals section ────────────────────────────────────────
   const actualsSection = buildActualsPromptSection();
-  if (actualsSection) {
-    prompt += `\n\n---\n${actualsSection}`;
+
+  // ── User questions ─────────────────────────────────────────
+  const userQuestions  = collectAIQuestions();
+  const hasActuals     = !!actualsSection;
+  const hasQuestions   = userQuestions.trim().length > 0;
+
+  // ── Output format instructions ─────────────────────────────
+  prompt += `\n\n---\nINSTRUCTIONS FOR YOUR RESPONSE:
+You MUST return your response using EXACTLY these section markers.
+Do not add any text outside the markers.
+Do not skip any marker even if the section is short.
+
+[COACHING]
+Provide 3–5 concise, actionable coaching tips about the ${planMonth} plan above.
+Focus on balance health, overspending risks, and savings opportunities.
+Be specific — mention actual RM amounts where relevant.
+Do NOT repeat or summarise the comparison data here — that goes in [COMPARISON].
+[/COACHING]`;
+
+  if (hasActuals) {
+    prompt += `\n\n${actualsSection}
+
+[COMPARISON]
+Compare the ACTUAL SPENDING DATA above against the ${planMonth} plan category by category.
+For each category that exists in both actuals and plan:
+  - State the planned amount, the actual amount, and the RM difference
+  - Flag clearly if the user is over or under their plan
+  - If a category only exists in actuals but not in the plan, flag it as unplanned spending
+  - End with 1–2 sentences summarising the biggest risk or win from the comparison
+Use clear formatting — one category per line. Be direct and specific with RM figures.
+[/COMPARISON]`;
   }
-  
-  // Append user questions if any
-  const userQuestions = collectAIQuestions();
-  if (userQuestions.length > 0) {
-    const numbered = userQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n');
-    prompt += `\n\n---\nThe user has also asked the following specific questions. Please address each one directly at the end of your response under a clearly labelled "Your Questions" section:\n\n${numbered}`;
+
+  if (hasQuestions) {
+    prompt += `\n\n[QUESTIONS]
+The user has asked the following specific questions. Answer each one clearly and directly,
+referencing their actual plan and spending data where relevant.
+Number your answers to match the questions.
+
+User questions:
+${userQuestions}
+[/QUESTIONS]`;
   }
+
+  // Close with explicit reminder
+  prompt += `\n\nRemember: Only output the marker sections listed above. No preamble, no sign-off.`;
 
   return prompt;
 }
