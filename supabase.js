@@ -41,9 +41,9 @@ function startKeepAlive() {
  */
 document.addEventListener('DOMContentLoaded', () => {
 
-  // ✅ Detect password recovery from URL hash BEFORE onAuthStateChange
   const hash = window.location.hash;
   const isRecovery = hash.includes('type=recovery');
+  if (isRecovery) history.replaceState(null, '', window.location.pathname);
 
   sb.auth.onAuthStateChange(async (event, session) => {
 
@@ -59,8 +59,9 @@ document.addEventListener('DOMContentLoaded', () => {
       await new Promise(resolve => setTimeout(resolve, 300));
 
       const modal = document.getElementById('change-password-modal');
-      if (modal) { 
-        modal.style.display = 'flex';
+      if (modal) {
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
       }
       return;
     }
