@@ -2791,10 +2791,16 @@ function showAIResult(text) {
   const card    = document.getElementById('ai-review-card');
   const content = document.getElementById('ai-review-content');
   card.style.display = '';
-  content.innerHTML  = `
+
+  // Convert plain text to safe HTML with line breaks preserved
+  const formatted = escHtml(text)
+    .replace(/\n{2,}/g, '</p><p>')   // double newline → new paragraph
+    .replace(/\n/g, '<br>');         // single newline → line break
+
+  content.innerHTML = `
     <div class="ai-review-box">
       <div class="ai-label">🤖 Coach's Advice</div>
-      <div class="ai-text">${escHtml(text)}</div>
+      <div class="ai-text"><p>${formatted}</p></div>
     </div>
     <button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="runAIReview()">🔄 Re-analyse</button>
   `;
