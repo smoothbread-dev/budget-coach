@@ -46,18 +46,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (isRecovery) history.replaceState(null, '', window.location.pathname);
 
   sb.auth.onAuthStateChange(async (event, session) => {
-
-    if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && isRecovery)) {
+   if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && isRecovery)) {
       currentUser = session.user;
       showApp();
       await new Promise(resolve => setTimeout(resolve, 0));
       initUserMenu();
       setUserAvatar(currentUser.email);
       await initApp();
-
-      // Give initApp time to render the modal into the DOM
-      await new Promise(resolve => setTimeout(resolve, 300));
-
+    
       const modal = document.getElementById('change-password-modal');
       if (modal) {
         modal.classList.add('open');
