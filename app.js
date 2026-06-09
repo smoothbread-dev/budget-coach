@@ -2808,11 +2808,6 @@ function showAIResult(text) {
     '<span class="ai-bullet"><span class="ai-bullet-dot">•</span><span>$2</span></span>'
   );
 
-  // Step 4: convert double newlines to paragraph breaks, single to <br>
-  safe = safe
-    .replace(/\n{2,}/g, '</p><p class="ai-para">')
-    .replace(/\n/g, '<br>');
-
   content.innerHTML = `
     <div class="ai-review-box">
       <div class="ai-label">🤖 Coach's Advice</div>
