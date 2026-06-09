@@ -22,7 +22,7 @@ let state = {
   currentYear:    new Date().getFullYear(),
   months:         {}
 };
-
+S
 let savingsCategories  = [];   // savings_categories rows
 let savingsAdjustments = [];   // savings_adjustments rows (all for this user)
 let planSavings        = [];   // plan_savings rows (all for this user)
@@ -2601,7 +2601,6 @@ function clearAIQuestions() {
 // ─────────────────────────────────────────
 // BUILD PROMPT (extracted, reusable)
 // ─────────────────────────────────────────
-
 function buildPrompt() {
   const data = currentMonthData();
   if (!data.income) return null;
@@ -2640,6 +2639,30 @@ function buildPrompt() {
       }).join('\n')
     : 'No savings allocations set for this month.';
 
+  // ── Gather optional sections BEFORE building the instruction order ──
+  const actualsSection = buildActualsPromptSection();
+  const userQuestions  = collectAIQuestions();
+
+  // ── Build the ordered instruction list dynamically ──
+  let stepNum = 1;
+  const steps = [];
+  steps.push(`${stepNum++}. A brief overall assessment of this plan (2-3 sentences)`);
+  steps.push(`${stepNum++}. 2-3 specific, actionable coaching tips with RM amounts where relevant`);
+  steps.push(`${stepNum++}. A short comment on their savings allocations — are they on track for their goals? Any categories falling behind?`);
+
+  if (actualsSection) {
+    steps.push(`${stepNum++}. An "Actual vs. Planned" section comparing last month's real spending against this month's plan — flag any categories where real behaviour differs significantly from the plan`);
+  }
+
+  if (userQuestions.length > 0) {
+    steps.push(`${stepNum++}. A "Your Questions" section — address each of the user's questions directly and clearly`);
+  }
+
+  steps.push(`${stepNum++}. One encouraging closing remark to motivate them`);
+
+  const instructionList = steps.join('\n');
+
+  // ── Build the full prompt ──
   let prompt = `You are a friendly but honest personal finance coach. The user is planning their budget BEFORE their salary arrives. Analyse their expected budget and give a concise, actionable coaching session.
 
 REGIONAL CONTEXT:
@@ -2658,28 +2681,21 @@ PLANNED EXPENSES:
 ${itemList || 'No items added yet.'}
 
 SAVINGS ALLOCATIONS THIS MONTH (${fmt(totalAllocated)} total allocated):
-${savingsAllocationLines}
+${savingsAllocationLines}`;
 
-Please provide:
-1. A brief overall assessment of this plan (2-3 sentences)
-2. 2-3 specific, actionable coaching tips with RM amounts where relevant
-3. A short comment on their savings allocations — are they on track for their goals? Any categories falling behind?
-4. One encouraging closing remark to motivate them
-
-Keep the tone warm, coach-like, and honest. Format clearly with short paragraphs.`;
-
-  // Inject actuals if available
-  const actualsSection = buildActualsPromptSection();
+  // Inject actuals data block if available
   if (actualsSection) {
     prompt += `\n\n---\n${actualsSection}`;
   }
-  
-  // Append user questions if any
-  const userQuestions = collectAIQuestions();
+
+  // Inject user questions data block if any
   if (userQuestions.length > 0) {
     const numbered = userQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n');
-    prompt += `\n\n---\nThe user has also asked the following specific questions. Please address each one directly at the end of your response under a clearly labelled "Your Questions" section:\n\n${numbered}`;
+    prompt += `\n\n---\nUSER QUESTIONS TO ADDRESS:\n${numbered}`;
   }
+
+  // ── Instruction order — closing remark is always last ──
+  prompt += `\n\n---\nPlease provide your response in this exact order:\n${instructionList}\n\nKeep the tone warm, coach-like, and honest. Format clearly with short paragraphs.`;
 
   return prompt;
 }
