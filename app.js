@@ -2222,16 +2222,13 @@ function parseActualsXlsx(file) {
     reader.onload = (e) => {
       try {
         const data     = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
 
-        // Use first sheet
         const sheetName = workbook.SheetNames[0];
         const sheet     = workbook.Sheets[sheetName];
 
-        // Convert to array of arrays (raw rows)
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
 
-        // Find header row — look for "Category" in row
         let headerRowIdx = -1;
         let colMap       = {};
 
@@ -2249,30 +2246,26 @@ function parseActualsXlsx(file) {
           return;
         }
 
-        // Column indices
         const COL = {
-          date:        colMap['date']        ?? 0,
-          category:    colMap['category']    ?? 2,
-          subcategory: colMap['subcategory'] ?? 3,
-          type:        colMap['income/expense'] ?? 6,
-          amount:      colMap['amount']      ?? 8
+          date:        colMap['date']             ?? 0,
+          category:    colMap['category']         ?? 2,
+          subcategory: colMap['subcategory']      ?? 3,
+          type:        colMap['income/expense']   ?? 6,
+          amount:      colMap['amount']           ?? 8
         };
 
-        // Parse data rows
         const dataRows = rows.slice(headerRowIdx + 1);
 
         let totalExpenses    = 0;
         let transactionCount = 0;
         let minDate          = null;
         let maxDate          = null;
-        const catMap         = {}; // "Category||Subcategory" → total
+        const catMap         = {};
 
         dataRows.forEach(row => {
           if (!row || row.length === 0) return;
 
           const type = String(row[COL.type] ?? '').trim().toLowerCase();
-
-          // Only process Expense rows
           if (type !== 'expense') return;
 
           const rawAmount = parseFloat(row[COL.amount]);
@@ -2280,23 +2273,36 @@ function parseActualsXlsx(file) {
 
           const category    = String(row[COL.category]    ?? '').trim() || 'Uncategorised';
           const subcategory = String(row[COL.subcategory] ?? '').trim() || '';
-          const rawDate     = String(row[COL.date]        ?? '').trim();
 
-          // Track date range — handles "DD/MM/YYYY HH:mm:ss" format
-          if (rawDate) {
-            const match = rawDate.match(
-              /^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}):(\d{2}))?$/
+          // ── Robust date parsing — handles JS Date, serial number, or string ──
+          let parsed = null;
+          const rawDate = row[COL.date];
+
+          if (rawDate instanceof Date) {
+            // SheetJS with cellDates:true returns a real JS Date
+            parsed = rawDate;
+
+          } else if (typeof rawDate === 'number') {
+            // Excel serial number fallback
+            const ms = (rawDate - 25569) * 86400 * 1000;
+            parsed = new Date(ms);
+
+          } else if (typeof rawDate === 'string' && rawDate.trim()) {
+            // "DD/MM/YYYY HH:mm:ss" string format
+            const match = rawDate.trim().match(
+              /^(\d{2})\/(\d{2})\/(\d{4})/
             );
             if (match) {
               const [, dd, mm, yyyy] = match;
-              // Reconstruct as YYYY-MM-DD so JS Date parses it correctly
-              const parsed = new Date(`${yyyy}-${mm}-${dd}`);
-              if (!isNaN(parsed.getTime())) {
-                if (!minDate || parsed < minDate) minDate = parsed;
-                if (!maxDate || parsed > maxDate) maxDate = parsed;
-              }
+              parsed = new Date(`${yyyy}-${mm}-${dd}`);
             }
           }
+
+          if (parsed && !isNaN(parsed.getTime())) {
+            if (!minDate || parsed < minDate) minDate = parsed;
+            if (!maxDate || parsed > maxDate) maxDate = parsed;
+          }
+          // ─────────────────────────────────────────────────────────────────
 
           const key = `${category}||${subcategory}`;
           if (!catMap[key]) catMap[key] = { category, subcategory, total: 0, count: 0 };
@@ -2312,7 +2318,6 @@ function parseActualsXlsx(file) {
           return;
         }
 
-        // Build categories array sorted by total descending
         const categories = Object.values(catMap)
           .sort((a, b) => b.total - a.total)
           .map(c => ({
@@ -2322,11 +2327,9 @@ function parseActualsXlsx(file) {
             count:       c.count
           }));
 
-        // Determine month key from the majority of transactions (use maxDate month)
-        const refDate    = maxDate || new Date();
+        const refDate          = maxDate || new Date();
         const detectedMonthKey = monthKey(refDate.getMonth(), refDate.getFullYear());
 
-        // Build date range label
         const fmt2 = (d) => d.toLocaleDateString('en-MY', {
           day: '2-digit', month: 'short', year: 'numeric'
         });
