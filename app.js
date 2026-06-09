@@ -580,6 +580,7 @@ async function initApp() {
   showToast('saving');
   document.getElementById('toast-label').textContent = 'Loading…';
   await loadFromSupabase();
+  await loadActualsFromSupabase();
 
   showToast('saved');
   document.getElementById('toast-label').textContent = '✓ Ready';
@@ -595,6 +596,9 @@ async function initApp() {
 
   checkAndPromptMonth();
   renderDefaultsTab();
+  renderActualsPreview();
+  updateActualsBadge();
+}
 }
 
 // ─────────────────────────────────────────
