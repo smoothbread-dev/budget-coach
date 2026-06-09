@@ -2731,7 +2731,7 @@ ${categories}`;
   // ── User questions ─────────────────────────────────────────
   const userQuestions  = collectAIQuestions();
   const hasActuals     = !!actualsSection;
-  const hasQuestions   = userQuestions.trim().length > 0;
+  const hasQuestions  = userQuestions.length > 0; // ✅
 
   // ── Output format instructions ─────────────────────────────
   prompt += `\n\n---\nINSTRUCTIONS FOR YOUR RESPONSE:
