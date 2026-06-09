@@ -59,10 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
       await new Promise(resolve => setTimeout(resolve, 300));
 
       const modal = document.getElementById('change-password-modal');
-      console.log('Recovery modal found:', modal); // debug
       if (modal) { 
-        modal.classList.remove('hidden');
-        modal.classList.add('open');
+        modal.style.display = 'flex';
       }
       return;
     }
