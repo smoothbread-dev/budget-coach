@@ -2646,19 +2646,19 @@ function buildPrompt() {
   // ── Build the ordered instruction list dynamically ──
   let stepNum = 1;
   const steps = [];
-  steps.push(`${stepNum++}. A brief overall assessment of this plan (2-3 sentences)`);
-  steps.push(`${stepNum++}. 2-3 specific, actionable coaching tips with RM amounts where relevant`);
-  steps.push(`${stepNum++}. A short comment on their savings allocations — are they on track for their goals? Any categories falling behind?`);
+  steps.push(`${stepNum++}. Overall Assessment — use header: [Overall Assessment]`);
+  steps.push(`${stepNum++}. 2-3 specific actionable coaching tips with RM amounts — use header: [Coaching Tips]`);
+  steps.push(`${stepNum++}. Comment on savings allocations progress — use header: [Savings Allocations]`);
 
   if (actualsSection) {
-    steps.push(`${stepNum++}. An "Actual vs. Planned" section comparing last month's real spending against this month's plan — flag any categories where real behaviour differs significantly from the plan`);
+    steps.push(`${stepNum++}. Actual vs. Planned comparison as bullet points — use header: [Actual vs. Planned]`);
   }
 
   if (userQuestions.length > 0) {
-    steps.push(`${stepNum++}. A "Your Questions" section — address each of the user's questions directly and clearly`);
+    steps.push(`${stepNum++}. Address each user question directly — use header: [Your Questions]`);
   }
 
-  steps.push(`${stepNum++}. One encouraging closing remark to motivate them`);
+  steps.push(`${stepNum++}. Encouraging closing remark — use header: [Final Note]`);
 
   const instructionList = steps.join('\n');
 
