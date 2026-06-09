@@ -22,7 +22,7 @@ let state = {
   currentYear:    new Date().getFullYear(),
   months:         {}
 };
-S
+
 let savingsCategories  = [];   // savings_categories rows
 let savingsAdjustments = [];   // savings_adjustments rows (all for this user)
 let planSavings        = [];   // plan_savings rows (all for this user)
