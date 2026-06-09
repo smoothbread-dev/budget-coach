@@ -2670,12 +2670,13 @@ This user is based in Malaysia. Please ensure all financial advice, product refe
 
 FORMATTING RULES — FOLLOW STRICTLY:
 - Do NOT use Markdown tables (no pipe characters, no | --- | separators).
-- Do NOT use Markdown headers (no # or ## symbols).
-- Do NOT use bold (**text**) or italic (*text*) Markdown syntax.
-- For the Actual vs. Planned section, present comparisons as plain bullet points instead. Example format:
+- Do NOT use Markdown bold (**text**) or italic (*text*) syntax.
+- Do NOT use # or ## for headers.
+- For section headers, use this exact format: [Your Header Title Here]
+  Example: [Overall Assessment]
+- For the Actual vs. Planned section, present comparisons as plain bullet points:
   • Food: Planned RM 500 → Actual RM 620 (RM 120 over)
-  • Transport: Planned RM 200 → Actual RM 180 (RM 20 under)
-- Use plain text only. Structure with short paragraphs and bullet points (• or -).
+- Use plain text only for all other content. Structure with short paragraphs and bullet points (• or -).
 
 PLAN SUMMARY:
 - Expected Income: ${fmt(data.income)}
@@ -2792,15 +2793,30 @@ function showAIResult(text) {
   const content = document.getElementById('ai-review-content');
   card.style.display = '';
 
-  // Convert plain text to safe HTML with line breaks preserved
-  const formatted = escHtml(text)
-    .replace(/\n{2,}/g, '</p><p>')   // double newline → new paragraph
-    .replace(/\n/g, '<br>');         // single newline → line break
+  // Step 1: escape HTML first for safety
+  let safe = escHtml(text);
+
+  // Step 2: convert [HEADER: ...] into styled header spans
+  safe = safe.replace(
+    /\[HEADER:\s*(.+?)\]/g,
+    '<span class="ai-section-header">$1</span>'
+  );
+
+  // Step 3: convert bullet lines into styled bullet items
+  safe = safe.replace(
+    /^([•\-])\s+(.+)$/gm,
+    '<span class="ai-bullet"><span class="ai-bullet-dot">•</span><span>$2</span></span>'
+  );
+
+  // Step 4: convert double newlines to paragraph breaks, single to <br>
+  safe = safe
+    .replace(/\n{2,}/g, '</p><p class="ai-para">')
+    .replace(/\n/g, '<br>');
 
   content.innerHTML = `
     <div class="ai-review-box">
       <div class="ai-label">🤖 Coach's Advice</div>
-      <div class="ai-text"><p>${formatted}</p></div>
+      <div class="ai-text"><p class="ai-para">${safe}</p></div>
     </div>
     <button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="runAIReview()">🔄 Re-analyse</button>
   `;
