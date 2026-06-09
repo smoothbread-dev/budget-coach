@@ -2232,3 +2232,56 @@ function resetPasswordToggle() {
   if (eyeOpen)       eyeOpen.style.display   = '';
   if (eyeClosed)     eyeClosed.style.display = 'none';
 }
+
+// ─────────────────────────────────────────
+// CHANGE PASSWORD MODAL
+// ─────────────────────────────────────────
+
+function closeChangePasswordModal() {
+  const modal = document.getElementById('change-password-modal');
+  if (modal) {
+    modal.classList.remove('open');
+    modal.classList.add('hidden');
+  }
+  // Clear fields
+  document.getElementById('cp-new-password').value    = '';
+  document.getElementById('cp-confirm-password').value = '';
+  document.getElementById('cp-error').classList.add('hidden');
+  document.getElementById('cp-success').classList.add('hidden');
+}
+
+async function submitChangePassword() {
+  const newPass     = document.getElementById('cp-new-password').value;
+  const confirmPass = document.getElementById('cp-confirm-password').value;
+  const errorEl     = document.getElementById('cp-error');
+  const successEl   = document.getElementById('cp-success');
+
+  errorEl.classList.add('hidden');
+  successEl.classList.add('hidden');
+
+  if (!newPass || newPass.length < 6) {
+    errorEl.textContent = 'Password must be at least 6 characters.';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+
+  if (newPass !== confirmPass) {
+    errorEl.textContent = 'Passwords do not match.';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+
+  const { error } = await sb.auth.updateUser({ password: newPass });
+
+  if (error) {
+    errorEl.textContent = error.message || 'Failed to update password.';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+
+  successEl.textContent = '✅ Password updated successfully!';
+  successEl.classList.remove('hidden');
+
+  // Auto-close after 2 seconds
+  setTimeout(() => closeChangePasswordModal(), 2000);
+}
