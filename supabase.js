@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const modal = document.getElementById('change-password-modal');
       console.log('Recovery modal found:', modal); // debug
       if (modal) modal.classList.remove('hidden');
+        modal.classList.add('open');
       return;
     }
 
