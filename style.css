@@ -1796,13 +1796,9 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--accent);
-  margin: 18px 0 6px 0;
+  margin: 25px 0px -15px 0;
   padding-bottom: 4px;
   border-bottom: 1px solid var(--border);
-}
-
-.ai-section-header:first-child {
-  margin-top: 0;
 }
 
 /* AI paragraphs */
