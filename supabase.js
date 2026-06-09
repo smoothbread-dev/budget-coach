@@ -363,14 +363,11 @@ document.getElementById('forgot-password-btn').addEventListener('click', async (
   const infoEl  = document.getElementById('auth-info');
   const infoText = document.getElementById('auth-info-text');
   errorEl.style.display = 'none';
-  errorEl.style.display = 'block';
-  
-  infoEl.style.display = 'none';
-  infoEl.style.display = 'block';
+  infoEl.style.display  = 'none';
 
   if (!email) {
     errorEl.textContent = 'Please enter your email address first.';
-    errorEl.classList.remove('bc-hidden');
+  errorEl.style.display = 'block';
     return;
   }
 
@@ -381,17 +378,17 @@ document.getElementById('forgot-password-btn').addEventListener('click', async (
 
     if (error) {
       errorEl.textContent = error.message || 'Failed to send reset email. Please try again.';
-      errorEl.classList.remove('bc-hidden');
+      errorEl.style.display = 'block';
       return;
     }
 
     // Show success using existing auth-info box
     infoText.textContent = `📧 Password reset email sent to ${email}. Check your inbox and follow the link to reset your password.`;
-    infoEl.classList.remove('bc-hidden');
+    infoEl.style.display = 'block';
 
   } catch (err) {
     errorEl.textContent = 'An unexpected error occurred. Please try again.';
-    errorEl.classList.remove('bc-hidden');
+    errorEl.style.display = 'block';
     console.error('Forgot password error:', err);
   }
 });
