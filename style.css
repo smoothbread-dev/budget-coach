@@ -1796,7 +1796,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--accent);
-  margin: 25px 0px -15px 0;
+  margin: 25px 0 0 0;
   padding-bottom: 4px;
   border-bottom: 1px solid var(--border);
 }
