@@ -1265,6 +1265,32 @@ body {
 .savings-stat-value.negative { color: var(--danger); }
 
 /* ─────────────────────────────────────────
+   MONTHS LEFT ROW
+───────────────────────────────────────── */
+.months-left-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0 8px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  font-size: 0.82rem;
+}
+
+.months-left-label {
+  color: var(--text-muted);
+}
+
+.months-left-value {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.months-left-value.goal-reached {
+  color: var(--accent2);
+}
+
+/* ─────────────────────────────────────────
    SAVINGS PROGRESS
 ───────────────────────────────────────── */
 .savings-progress-wrap  { margin-bottom: 16px; }
