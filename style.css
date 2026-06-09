@@ -236,6 +236,20 @@ body {
   margin:     0;
 }
 
+.user-dropdown-change-password {
+  display:    block;
+  width:      100%;
+  padding:    11px 16px;
+  background: none;
+  border:     none;
+  color:      var(--text);
+  font-size:  0.88rem;
+  text-align: left;
+  cursor:     pointer;
+  transition: background 0.2s;
+}
+.user-dropdown-change-password:hover { background: var(--surface2); }
+
 .user-dropdown-signout {
   display:    block;
   width:      100%;
