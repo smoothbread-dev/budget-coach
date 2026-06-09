@@ -2065,6 +2065,459 @@ function handlePanelOverlayClick(e, id) {
 }
 
 // ─────────────────────────────────────────
+// ACTUALS — STATE
+// ─────────────────────────────────────────
+
+/**
+ * In-memory store for the currently loaded actuals summary.
+ * Populated after a successful parse or DB load.
+ * Shape: { monthKey, dateRangeLabel, totalExpenses, transactionCount, categories[] }
+ */
+let loadedActuals = null;
+
+// ─────────────────────────────────────────
+// ACTUALS — SUPABASE LOAD
+// ─────────────────────────────────────────
+
+/**
+ * Loads any previously saved actuals summary from Supabase for the current user.
+ * Called once during initApp().
+ */
+async function loadActualsFromSupabase() {
+  const { data, error } = await sb
+    .from('actual_spending')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('uploaded_at', { ascending: false });
+
+  if (error) {
+    console.error('loadActualsFromSupabase error:', error);
+    return;
+  }
+
+  // Store all rows keyed by month_key for quick lookup
+  if (data && data.length > 0) {
+    // We keep all months in memory — UI shows the most relevant one
+    window._allActuals = {};
+    data.forEach(row => {
+      window._allActuals[row.month_key] = {
+        monthKey:         row.month_key,
+        dateRangeLabel:   row.date_range_label,
+        totalExpenses:    Number(row.total_expenses),
+        transactionCount: row.transaction_count,
+        categories:       row.categories
+      };
+    });
+  }
+}
+
+/**
+ * Returns the actuals record most relevant to the current session.
+ * Priority: last month > any most recent month available.
+ */
+function getBestActuals() {
+  if (!window._allActuals) return null;
+
+  // Last month key
+  let lm = state.currentMonth - 1;
+  let ly = state.currentYear;
+  if (lm < 0) { lm = 11; ly--; }
+  const lastMonthKey = monthKey(lm, ly);
+
+  if (window._allActuals[lastMonthKey]) return window._allActuals[lastMonthKey];
+
+  // Fall back to most recently uploaded
+  const keys = Object.keys(window._allActuals).sort().reverse();
+  return keys.length > 0 ? window._allActuals[keys[0]] : null;
+}
+
+// ─────────────────────────────────────────
+// ACTUALS — SUPABASE SAVE
+// ─────────────────────────────────────────
+
+async function saveActualsToSupabase(summary) {
+  showToast('saving');
+
+  const payload = {
+    user_id:           currentUser.id,
+    month_key:         summary.monthKey,
+    uploaded_at:       new Date().toISOString(),
+    total_expenses:    summary.totalExpenses,
+    transaction_count: summary.transactionCount,
+    date_range_label:  summary.dateRangeLabel,
+    categories:        summary.categories
+  };
+
+  // Check if a row already exists for this month
+  const { data: existing } = await sb
+    .from('actual_spending')
+    .select('id')
+    .eq('user_id', currentUser.id)
+    .eq('month_key', summary.monthKey)
+    .maybeSingle();
+
+  let error;
+
+  if (existing) {
+    ({ error } = await sb
+      .from('actual_spending')
+      .update(payload)
+      .eq('id', existing.id));
+  } else {
+    ({ error } = await sb
+      .from('actual_spending')
+      .insert(payload));
+  }
+
+  if (error) {
+    console.error('saveActualsToSupabase error:', error);
+    showToast('error', 'Failed to save actuals');
+    return false;
+  }
+
+  // Update in-memory store
+  if (!window._allActuals) window._allActuals = {};
+  window._allActuals[summary.monthKey] = summary;
+
+  showToast('saved');
+  return true;
+}
+
+// ─────────────────────────────────────────
+// ACTUALS — DELETE
+// ─────────────────────────────────────────
+
+async function deleteActualsFromSupabase(monthKey) {
+  const { error } = await sb
+    .from('actual_spending')
+    .delete()
+    .eq('user_id', currentUser.id)
+    .eq('month_key', monthKey);
+
+  if (error) {
+    console.error('deleteActualsFromSupabase error:', error);
+    return false;
+  }
+
+  if (window._allActuals) delete window._allActuals[monthKey];
+  return true;
+}
+
+// ─────────────────────────────────────────
+// ACTUALS — PARSE XLSX
+// ─────────────────────────────────────────
+
+/**
+ * Parses the uploaded .xlsx file using SheetJS.
+ * Filters to Expense rows only, groups by Category + Subcategory,
+ * and returns a clean summary object.
+ */
+function parseActualsXlsx(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      try {
+        const data     = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+
+        // Use first sheet
+        const sheetName = workbook.SheetNames[0];
+        const sheet     = workbook.Sheets[sheetName];
+
+        // Convert to array of arrays (raw rows)
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+        // Find header row — look for "Category" in row
+        let headerRowIdx = -1;
+        let colMap       = {};
+
+        for (let i = 0; i < Math.min(rows.length, 5); i++) {
+          const row = rows[i].map(c => String(c).trim().toLowerCase());
+          if (row.includes('category')) {
+            headerRowIdx = i;
+            row.forEach((cell, idx) => { colMap[cell] = idx; });
+            break;
+          }
+        }
+
+        if (headerRowIdx === -1) {
+          reject(new Error('Could not find header row. Make sure this is a Money Manager export.'));
+          return;
+        }
+
+        // Column indices
+        const COL = {
+          date:        colMap['date']        ?? 0,
+          category:    colMap['category']    ?? 2,
+          subcategory: colMap['subcategory'] ?? 3,
+          type:        colMap['income/expense'] ?? 6,
+          amount:      colMap['amount']      ?? 8
+        };
+
+        // Parse data rows
+        const dataRows = rows.slice(headerRowIdx + 1);
+
+        let totalExpenses    = 0;
+        let transactionCount = 0;
+        let minDate          = null;
+        let maxDate          = null;
+        const catMap         = {}; // "Category||Subcategory" → total
+
+        dataRows.forEach(row => {
+          if (!row || row.length === 0) return;
+
+          const type = String(row[COL.type] ?? '').trim().toLowerCase();
+
+          // Only process Expense rows
+          if (type !== 'expense') return;
+
+          const rawAmount = parseFloat(row[COL.amount]);
+          if (isNaN(rawAmount) || rawAmount <= 0) return;
+
+          const category    = String(row[COL.category]    ?? '').trim() || 'Uncategorised';
+          const subcategory = String(row[COL.subcategory] ?? '').trim() || '';
+          const rawDate     = String(row[COL.date]        ?? '').trim();
+
+          // Track date range
+          if (rawDate) {
+            // Parse date — format is "DD/MM/YYYY HH:MM:SS"
+            const datePart = rawDate.split(' ')[0];
+            const [d, m, y] = datePart.split('/').map(Number);
+            const parsed    = new Date(y, m - 1, d);
+            if (!isNaN(parsed)) {
+              if (!minDate || parsed < minDate) minDate = parsed;
+              if (!maxDate || parsed > maxDate) maxDate = parsed;
+            }
+          }
+
+          const key = `${category}||${subcategory}`;
+          if (!catMap[key]) catMap[key] = { category, subcategory, total: 0, count: 0 };
+          catMap[key].total += rawAmount;
+          catMap[key].count += 1;
+
+          totalExpenses    += rawAmount;
+          transactionCount += 1;
+        });
+
+        if (transactionCount === 0) {
+          reject(new Error('No expense transactions found. Please check the file is a valid Money Manager export.'));
+          return;
+        }
+
+        // Build categories array sorted by total descending
+        const categories = Object.values(catMap)
+          .sort((a, b) => b.total - a.total)
+          .map(c => ({
+            category:    c.category,
+            subcategory: c.subcategory,
+            total:       Math.round(c.total * 100) / 100,
+            count:       c.count
+          }));
+
+        // Determine month key from the majority of transactions (use maxDate month)
+        const refDate    = maxDate || new Date();
+        const detectedMonthKey = monthKey(refDate.getMonth(), refDate.getFullYear());
+
+        // Build date range label
+        const fmt2 = (d) => d.toLocaleDateString('en-MY', {
+          day: '2-digit', month: 'short', year: 'numeric'
+        });
+        const dateRangeLabel = minDate && maxDate
+          ? `${fmt2(minDate)} – ${fmt2(maxDate)}`
+          : 'Unknown date range';
+
+        resolve({
+          monthKey:         detectedMonthKey,
+          dateRangeLabel,
+          totalExpenses:    Math.round(totalExpenses * 100) / 100,
+          transactionCount,
+          categories
+        });
+
+      } catch (err) {
+        reject(new Error(`Failed to parse file: ${err.message}`));
+      }
+    };
+
+    reader.onerror = () => reject(new Error('Failed to read file.'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// ─────────────────────────────────────────
+// ACTUALS — HANDLE UPLOAD
+// ─────────────────────────────────────────
+
+async function handleActualsUpload(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  // Reset input so same file can be re-uploaded if needed
+  event.target.value = '';
+
+  // Show parsing state
+  const uploadRow = document.getElementById('actuals-upload-row');
+  const origHTML  = uploadRow.innerHTML;
+  uploadRow.innerHTML = `<span style="font-size:0.82rem;color:var(--text-muted)">⏳ Parsing file…</span>`;
+
+  let summary;
+  try {
+    summary = await parseActualsXlsx(file);
+  } catch (err) {
+    uploadRow.innerHTML = origHTML;
+    showAlert(`Could not parse file: ${err.message}`, 'error');
+    return;
+  }
+
+  uploadRow.innerHTML = origHTML;
+
+  // Check if data already exists for this month
+  const existing = window._allActuals?.[summary.monthKey];
+  if (existing) {
+    const [yr, mo] = summary.monthKey.split('-');
+    const label    = monthLabel(parseInt(mo) - 1, parseInt(yr));
+
+    const confirmed = await showConfirm(
+      `You already have actual spending data for ${label}. Replace it with this new upload?`,
+      'Replace'
+    );
+    if (!confirmed) return;
+  }
+
+  // Save to Supabase
+  const ok = await saveActualsToSupabase(summary);
+  if (!ok) return;
+
+  // Update UI
+  renderActualsPreview();
+  updateActualsBadge();
+}
+
+// ─────────────────────────────────────────
+// ACTUALS — REMOVE
+// ─────────────────────────────────────────
+
+async function removeActuals() {
+  const actuals = getBestActuals();
+  if (!actuals) return;
+
+  const [yr, mo] = actuals.monthKey.split('-');
+  const label    = monthLabel(parseInt(mo) - 1, parseInt(yr));
+
+  const confirmed = await showConfirm(
+    `Remove actual spending data for ${label}? The AI will no longer have this data.`,
+    'Remove'
+  );
+  if (!confirmed) return;
+
+  const ok = await deleteActualsFromSupabase(actuals.monthKey);
+  if (!ok) return;
+
+  renderActualsPreview();
+  updateActualsBadge();
+}
+
+// ─────────────────────────────────────────
+// ACTUALS — RENDER PREVIEW
+// ─────────────────────────────────────────
+
+function renderActualsPreview() {
+  const preview  = document.getElementById('actuals-preview');
+  const metaEl   = document.getElementById('actuals-preview-meta');
+  const catsEl   = document.getElementById('actuals-preview-cats');
+
+  const actuals = getBestActuals();
+
+  if (!actuals) {
+    preview.style.display = 'none';
+    return;
+  }
+
+  preview.style.display = '';
+
+  // Meta line
+  const [yr, mo] = actuals.monthKey.split('-');
+  const label    = monthLabel(parseInt(mo) - 1, parseInt(yr));
+
+  metaEl.innerHTML = `
+    <strong>✅ ${label} actuals loaded</strong><br>
+    ${actuals.transactionCount} transactions · ${actuals.dateRangeLabel}<br>
+    Total Expenses: <strong>${fmt(actuals.totalExpenses)}</strong>
+  `;
+
+  // Category chips
+  catsEl.innerHTML = actuals.categories.map(c => {
+    const label = c.subcategory ? `${c.category} / ${c.subcategory}` : c.category;
+    return `
+      <span class="actuals-cat-chip">
+        <strong>${escHtml(label)}</strong> ${fmt(c.total)}
+      </span>
+    `;
+  }).join('');
+}
+
+// ─────────────────────────────────────────
+// ACTUALS — BADGE (section title indicator)
+// ─────────────────────────────────────────
+
+function updateActualsBadge() {
+  const titleEl = document.getElementById('ai-questions-section-title');
+  if (!titleEl) return;
+
+  // Remove existing badge if any
+  const existing = titleEl.querySelector('.actuals-title-badge');
+  if (existing) existing.remove();
+
+  const actuals = getBestActuals();
+  if (!actuals) return;
+
+  const [yr, mo] = actuals.monthKey.split('-');
+  const label    = MONTHS[parseInt(mo) - 1];
+
+  const badge = document.createElement('span');
+  badge.className   = 'actuals-title-badge';
+  badge.textContent = `📂 ${label} actuals`;
+  titleEl.appendChild(badge);
+}
+
+// ─────────────────────────────────────────
+// ACTUALS — BUILD PROMPT SECTION
+// ─────────────────────────────────────────
+
+/**
+ * Returns a formatted string to inject into the AI prompt,
+ * or null if no actuals are loaded.
+ */
+function buildActualsPromptSection() {
+  const actuals = getBestActuals();
+  if (!actuals) return null;
+
+  const [yr, mo] = actuals.monthKey.split('-');
+  const label    = monthLabel(parseInt(mo) - 1, parseInt(yr));
+
+  const catLines = actuals.categories.map(c => {
+    const pct     = actuals.totalExpenses > 0
+      ? ((c.total / actuals.totalExpenses) * 100).toFixed(1)
+      : '0.0';
+    const subPart = c.subcategory ? ` / ${c.subcategory}` : '';
+    return `  - ${c.category}${subPart}: ${fmt(c.total)} (${pct}%) — ${c.count} transaction${c.count !== 1 ? 's' : ''}`;
+  }).join('\n');
+
+  return `ACTUAL SPENDING DATA — ${label} (from Money Manager export):
+Total Actual Expenses: ${fmt(actuals.totalExpenses)} across ${actuals.transactionCount} transactions
+Date Range: ${actuals.dateRangeLabel}
+Note: Transfer-Out and Income rows are excluded. Only expense transactions are included.
+
+Breakdown by Category:
+${catLines}
+
+When coaching, compare these real figures against this month's planned expenses.
+Flag any categories where the plan looks unrealistic based on last month's actual behaviour.
+If the user is consistently overspending in a category, name it directly and suggest a specific RM adjustment.`;
+}
+
+// ─────────────────────────────────────────
 // AI QUESTIONS — Dynamic list management
 // ─────────────────────────────────────────
 
