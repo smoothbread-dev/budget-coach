@@ -158,6 +158,17 @@ function showAuth() {
 
 /** Toggles the auth form between Sign In and Sign Up mode, clearing fields on each switch. */
 document.getElementById('auth-toggle-btn').addEventListener('click', () => {
+  const isSignIn = document.getElementById('auth-submit-btn').textContent.trim() === 'Sign In';
+  const forgotWrap = document.getElementById('forgot-password-wrap');
+
+  if (isSignIn) {
+    // Switching to Sign Up
+    forgotWrap.classList.add('bc-hidden');
+  } else {
+    // Switching to Sign In
+    forgotWrap.classList.remove('bc-hidden');
+  }
+  
   isSignUp = !isSignUp;
 
   document.getElementById('auth-title').textContent      = isSignUp ? 'Create Your Account' : 'Welcome Back';
@@ -339,3 +350,45 @@ function clearUserAvatar() {
   if (avatarEl) avatarEl.textContent = '?';
   if (emailEl)  emailEl.textContent  = '';
 }
+
+// ─────────────────────────────────────────
+// FORGOT PASSWORD
+// ─────────────────────────────────────────
+
+document.getElementById('forgot-password-btn').addEventListener('click', async () => {
+  const email = document.getElementById('auth-email').value.trim();
+
+  // Clear previous messages
+  const errorEl = document.getElementById('auth-error');
+  const infoEl  = document.getElementById('auth-info');
+  const infoText = document.getElementById('auth-info-text');
+  errorEl.classList.add('bc-hidden');
+  infoEl.classList.add('bc-hidden');
+
+  if (!email) {
+    errorEl.textContent = 'Please enter your email address first.';
+    errorEl.classList.remove('bc-hidden');
+    return;
+  }
+
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin  // adjust if you have a dedicated reset page
+    });
+
+    if (error) {
+      errorEl.textContent = error.message || 'Failed to send reset email. Please try again.';
+      errorEl.classList.remove('bc-hidden');
+      return;
+    }
+
+    // Show success using existing auth-info box
+    infoText.textContent = `📧 Password reset email sent to ${email}. Check your inbox and follow the link to reset your password.`;
+    infoEl.classList.remove('bc-hidden');
+
+  } catch (err) {
+    errorEl.textContent = 'An unexpected error occurred. Please try again.';
+    errorEl.classList.remove('bc-hidden');
+    console.error('Forgot password error:', err);
+  }
+});
