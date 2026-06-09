@@ -2239,15 +2239,20 @@ function resetPasswordToggle() {
 
 function closeChangePasswordModal() {
   const modal = document.getElementById('change-password-modal');
-  if (modal) {
-    modal.classList.remove('open');
-    modal.classList.add('hidden');
-  }
-  // Clear fields
-  document.getElementById('cp-new-password').value    = '';
-  document.getElementById('cp-confirm-password').value = '';
-  document.getElementById('cp-error').classList.add('hidden');
-  document.getElementById('cp-success').classList.add('hidden');
+  if (!modal) return;
+
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+
+  const newPass    = document.getElementById('cp-new-password');
+  const confirmPass = document.getElementById('cp-confirm-password');
+  const errorEl    = document.getElementById('cp-error');
+  const successEl  = document.getElementById('cp-success');
+
+  if (newPass)     newPass.value     = '';
+  if (confirmPass) confirmPass.value = '';
+  if (errorEl)     errorEl.classList.add('hidden');
+  if (successEl)   successEl.classList.add('hidden');
 }
 
 async function submitChangePassword() {
