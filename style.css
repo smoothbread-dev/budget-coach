@@ -1855,6 +1855,14 @@ body {
   white-space: pre-wrap;
 }
 
+.ai-text p {
+  margin: 0 0 10px 0;
+}
+
+.ai-text p:last-child {
+  margin-bottom: 0;
+}
+
 /* ─────────────────────────────────────────
    RESPONSIVE
 ───────────────────────────────────────── */
