@@ -2507,7 +2507,19 @@ function buildActualsPromptSection() {
     return `  - ${c.category}${subPart}: ${fmt(c.total)} (${pct}%) — ${c.count} transaction${c.count !== 1 ? 's' : ''}`;
   }).join('\n');
 
-  return `ACTUAL SPENDING DATA — ${label} (from Money Manager export):
+  return `
+The user has also provided actual spending data for ${label}. 
+
+Using this data, you MUST include a section in your response with the exact heading:
+## 📊 Actual vs. Planned Comparison — ${label}
+
+This section must contain:
+1. A side-by-side comparison (or clear list) of each category's PLANNED vs. ACTUAL spend
+2. The RM difference and whether the user is over or under budget per category
+3. A short insight (1–2 sentences) for any category that is significantly off (>10% variance)
+4. A summary verdict at the end (e.g. overall over/under budget by RM X)
+
+ACTUAL SPENDING DATA — ${label} (from Money Manager export):
 Total Actual Expenses: ${fmt(actuals.totalExpenses)} across ${actuals.transactionCount} transactions
 Date Range: ${actuals.dateRangeLabel}
 Note: Transfer-Out and Income rows are excluded. Only expense transactions are included.
