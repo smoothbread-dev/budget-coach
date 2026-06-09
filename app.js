@@ -2828,85 +2828,62 @@ async function runAIReview() {
   }
 }
 
-// ─────────────────────────────────────────
-// AI RESULT — PARSE MARKERS
-// ─────────────────────────────────────────
-
 function parseAIResponse(raw) {
   const extract = (tag) => {
-    const re    = new RegExp(`\\[${tag}\\]([\\s\\S]*?)\\[\\/${tag}\\]`, 'i');
+    const re  = new RegExp(`\\[${tag}\\]([\\s\\S]*?)\\[\\/${tag}\\]`, 'i');
     const match = raw.match(re);
     return match ? match[1].trim() : null;
   };
+
   return {
-    coaching:   extract('COACHING'),
-    comparison: extract('COMPARISON'),
-    questions:  extract('QUESTIONS')
+    coaching:    extract('COACHING'),
+    comparison:  extract('COMPARISON'),
+    questions:   extract('QUESTIONS')
   };
 }
 
-// ─────────────────────────────────────────
-// AI RESULT — RENDER MODULAR CARDS
-// ─────────────────────────────────────────
-
 function showAIResult(raw) {
-  const card    = document.getElementById('ai-review-card');
-  const content = document.getElementById('ai-review-content');
-  card.style.display = '';
-
   const { coaching, comparison, questions } = parseAIResponse(raw);
 
-  // ── Card builder helper ────────────────────────────────────
-  const makeCard = (emoji, title, mdText, extraClass = '') => {
-    const wrapper = document.createElement('div');
-    wrapper.className = `ai-result-card ${extraClass}`.trim();
-    wrapper.innerHTML = `
+  const resultContainer = document.getElementById('ai-result-container');
+  resultContainer.innerHTML = '';
+
+  // ── Card builder helper ──────────────────────────────────
+  const makeCard = (emoji, title, content, accentClass = '') => {
+    const card = document.createElement('div');
+    card.className = `ai-result-card ${accentClass}`.trim();
+    card.innerHTML = `
       <div class="ai-result-card-header">
         <span class="ai-result-card-icon">${emoji}</span>
         <span class="ai-result-card-title">${title}</span>
       </div>
-      <div class="ai-result-card-body">${marked.parse(mdText)}</div>
+      <div class="ai-result-card-body">${marked.parse(content)}</div>
     `;
-    return wrapper;
+    resultContainer.appendChild(card);
   };
 
-  content.innerHTML = '';
-
-  // ── 1. Coaching — always shown ─────────────────────────────
+  // ── 1. Coaching — always shown ───────────────────────────
   if (coaching) {
-    content.appendChild(makeCard('💡', 'Coaching & Recommendations', coaching));
+    makeCard('💡', 'Coaching & Recommendations', coaching);
   }
 
-  // ── 2. Comparison — only if actuals were loaded ────────────
+  // ── 2. Comparison — only if actuals were loaded ──────────
   if (comparison) {
-    content.appendChild(
-      makeCard('📊', 'Actual vs Plan Comparison', comparison, 'ai-result-card--comparison')
-    );
+    makeCard('📊', 'Actual vs Plan Comparison', comparison, 'ai-result-card--comparison');
   }
 
-  // ── 3. Questions — only if user asked something ────────────
+  // ── 3. Questions — only if user asked something ──────────
   if (questions) {
-    content.appendChild(
-      makeCard('❓', 'Your Questions', questions, 'ai-result-card--questions')
-    );
+    makeCard('❓', 'Your Questions', questions, 'ai-result-card--questions');
   }
 
-  // ── Fallback — if markers failed entirely ──────────────────
+  // ── Fallback — if markers failed (safety net) ────────────
   if (!coaching && !comparison && !questions) {
-    content.innerHTML = `
-      <div class="ai-result-card">
-        <div class="ai-result-card-body">${marked.parse(raw)}</div>
-      </div>
-    `;
+    const card = document.createElement('div');
+    card.className = 'ai-result-card';
+    card.innerHTML = `<div class="ai-result-card-body">${marked.parse(raw)}</div>`;
+    resultContainer.appendChild(card);
   }
-
-  // ── Re-analyse button ──────────────────────────────────────
-  const reBtn = document.createElement('button');
-  reBtn.className   = 'btn btn-secondary btn-sm';
-  reBtn.style.marginTop = '10px';
-  reBtn.textContent = '🔄 Re-analyse';
-  reBtn.onclick     = runAIReview;
-  content.appendChild(reBtn);
 }
 
 function resetAIReviewUI() {
