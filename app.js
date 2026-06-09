@@ -2510,7 +2510,7 @@ function buildActualsPromptSection() {
   return `
 The user has also provided actual spending data for ${label}. 
 
-Please compare these actuals against this month's planned expenses in a dedicated "Actual vs. Planned" section.
+Please compare these actuals against this month's planned expenses in a dedicated "Actual vs. Planned" section and provide 1-2 lines of guidance based on compared data.
 
 ACTUAL SPENDING DATA — ${label} (from Money Manager export):
 Total Actual Expenses: ${fmt(actuals.totalExpenses)} across ${actuals.transactionCount} transactions
