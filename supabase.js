@@ -40,8 +40,22 @@ function startKeepAlive() {
  * Routes to the app on login and back to the auth screen on logout.
  */
 document.addEventListener('DOMContentLoaded', () => {
-
+  
   sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      showApp();
+      await new Promise(resolve => setTimeout(resolve, 0));
+      initUserMenu();
+      setUserAvatar(session.user.email);
+      await initApp();
+      // Open the change password modal automatically
+      const modal = document.getElementById('change-password-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+      }
+      return;
+    }
+    
     // Guard against ghost events with no user
     if (event === 'INITIAL_SESSION' && !session?.user) {
       showAuth();
@@ -376,7 +390,7 @@ document.getElementById('forgot-password-btn').addEventListener('click', async (
 
   try {
     const { error } = await sb.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin
+      redirectTo: 'https://smoothbread-dev.github.io/budget-coach/'
     });
 
     if (error) {
