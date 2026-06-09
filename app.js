@@ -2282,15 +2282,19 @@ function parseActualsXlsx(file) {
           const subcategory = String(row[COL.subcategory] ?? '').trim() || '';
           const rawDate     = String(row[COL.date]        ?? '').trim();
 
-          // Track date range
+          // Track date range — handles "DD/MM/YYYY HH:mm:ss" format
           if (rawDate) {
-            // Parse date — format is "DD/MM/YYYY HH:MM:SS"
-            const datePart = rawDate.split(' ')[0];
-            const [d, m, y] = datePart.split('/').map(Number);
-            const parsed    = new Date(y, m - 1, d);
-            if (!isNaN(parsed)) {
-              if (!minDate || parsed < minDate) minDate = parsed;
-              if (!maxDate || parsed > maxDate) maxDate = parsed;
+            const match = rawDate.match(
+              /^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}):(\d{2}))?$/
+            );
+            if (match) {
+              const [, dd, mm, yyyy] = match;
+              // Reconstruct as YYYY-MM-DD so JS Date parses it correctly
+              const parsed = new Date(`${yyyy}-${mm}-${dd}`);
+              if (!isNaN(parsed.getTime())) {
+                if (!minDate || parsed < minDate) minDate = parsed;
+                if (!maxDate || parsed > maxDate) maxDate = parsed;
+              }
             }
           }
 
