@@ -2668,6 +2668,15 @@ function buildPrompt() {
 REGIONAL CONTEXT:
 This user is based in Malaysia. Please ensure all financial advice, product references, loan structures, tax considerations, and spending norms are appropriate and relevant to the Malaysian context. Avoid assumptions based on Western (US/UK/AU) financial systems or products.
 
+FORMATTING RULES — FOLLOW STRICTLY:
+- Do NOT use Markdown tables (no pipe characters, no | --- | separators).
+- Do NOT use Markdown headers (no # or ## symbols).
+- Do NOT use bold (**text**) or italic (*text*) Markdown syntax.
+- For the Actual vs. Planned section, present comparisons as plain bullet points instead. Example format:
+  • Food: Planned RM 500 → Actual RM 620 (RM 120 over)
+  • Transport: Planned RM 200 → Actual RM 180 (RM 20 under)
+- Use plain text only. Structure with short paragraphs and bullet points (• or -).
+
 PLAN SUMMARY:
 - Expected Income: ${fmt(data.income)}
 - Expected Needs: ${fmt(needs)} (${((needs / data.income) * 100).toFixed(1)}% of income)
