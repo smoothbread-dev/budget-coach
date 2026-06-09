@@ -1614,6 +1614,44 @@ body {
 }
 
 /* ─────────────────────────────────────────
+   AI REVIEW HEADER
+───────────────────────────────────────── */
+.ai-review-header {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  margin-bottom:   14px;
+}
+
+/* ─────────────────────────────────────────
+   PROMPT PREVIEW MODAL
+───────────────────────────────────────── */
+.prompt-preview-box {
+  max-width:  640px;
+  width:      100%;
+  max-height: 80vh;
+  display:    flex;
+  flex-direction: column;
+}
+
+.prompt-preview-pre {
+  flex:          1;
+  background:    var(--surface2);
+  border:        1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding:       16px;
+  font-size:     0.8rem;
+  color:         var(--text-muted);
+  line-height:   1.7;
+  white-space:   pre-wrap;
+  word-break:    break-word;
+  overflow-y:    auto;
+  max-height:    50vh;
+  font-family:   'Inter', system-ui, sans-serif;
+  margin-bottom: 4px;
+}
+
+/* ─────────────────────────────────────────
    AI REVIEW
 ───────────────────────────────────────── */
 .ai-review-card {
