@@ -2356,7 +2356,6 @@ async function handleActualsUpload(event) {
   const file = event.target.files?.[0];
   if (!file) return;
 
-  // Reset input so same file can be re-uploaded if needed
   event.target.value = '';
 
   // Show parsing state
@@ -2375,28 +2374,112 @@ async function handleActualsUpload(event) {
 
   uploadRow.innerHTML = origHTML;
 
-  // Check if data already exists for this month
+  // ── Month picker — auto-detected as default, user can change ──
+  const confirmedMonthKey = await showMonthPickerModal(summary.monthKey);
+  if (!confirmedMonthKey) return; // user cancelled
+
+  summary.monthKey = confirmedMonthKey;
+
+  // ── Check for existing data for this month ─────────────────
   const existing = window._allActuals?.[summary.monthKey];
   if (existing) {
-    const [yr, mo] = summary.monthKey.split('-');
-    const label    = monthLabel(parseInt(mo) - 1, parseInt(yr));
-
+    const [yr, mo]  = summary.monthKey.split('-');
+    const lbl       = monthLabel(parseInt(mo) - 1, parseInt(yr));
     const confirmed = await showConfirm(
-      `You already have actual spending data for ${label}. Replace it with this new upload?`,
+      `You already have actual spending data for ${lbl}. Replace it with this new upload?`,
       'Replace'
     );
     if (!confirmed) return;
   }
 
-  // Save to Supabase
+  // ── Save & render ──────────────────────────────────────────
   const ok = await saveActualsToSupabase(summary);
   if (!ok) return;
 
-  // Update UI
   renderActualsPreview();
   updateActualsBadge();
 }
 
+// ─────────────────────────────────────────
+// MONTH PICKER MODAL
+// ─────────────────────────────────────────
+
+function showMonthPickerModal(defaultMonthKey) {
+  return new Promise((resolve) => {
+    const now       = new Date();
+    const thisYear  = now.getFullYear();
+    const startYear = 2018;
+
+    const [defY, defM] = defaultMonthKey.split('-').map(Number);
+
+    // Build year options — newest first
+    let yearOptions = '';
+    for (let y = thisYear + 1; y >= startYear; y--) {
+      yearOptions += `<option value="${y}" ${y === defY ? 'selected' : ''}>${y}</option>`;
+    }
+
+    // Build month options
+    let monthOptions = '';
+    MONTHS.forEach((name, idx) => {
+      const val = String(idx + 1).padStart(2, '0');
+      monthOptions += `<option value="${val}" ${(idx + 1) === defM ? 'selected' : ''}>${name}</option>`;
+    });
+
+    // Inject modal
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay month-picker-overlay';
+    overlay.id        = 'month-picker-overlay';
+    overlay.innerHTML = `
+      <div class="modal-box month-picker-modal">
+        <div class="modal-header">
+          <span class="modal-title">📅 Confirm Data Month</span>
+        </div>
+        <div class="modal-body">
+          <p class="month-picker-desc">
+            We detected your data is from
+            <strong>${MONTHS[defM - 1]} ${defY}</strong>.
+            Confirm or adjust the month this data belongs to.
+          </p>
+          <div class="month-picker-selects">
+            <select id="month-picker-month" class="form-input month-picker-select">
+              ${monthOptions}
+            </select>
+            <select id="month-picker-year" class="form-input month-picker-select">
+              ${yearOptions}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="month-picker-cancel">Cancel</button>
+          <button class="btn btn-primary"   id="month-picker-confirm">Confirm Month</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('modal-overlay--visible'));
+
+    const cleanup = () => {
+      overlay.classList.remove('modal-overlay--visible');
+      setTimeout(() => overlay.remove(), 200);
+    };
+
+    document.getElementById('month-picker-cancel').onclick = () => {
+      cleanup(); resolve(null);
+    };
+
+    document.getElementById('month-picker-confirm').onclick = () => {
+      const m = document.getElementById('month-picker-month').value;
+      const y = document.getElementById('month-picker-year').value;
+      cleanup();
+      resolve(`${y}-${m}`);
+    };
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) { cleanup(); resolve(null); }
+    });
+  });
+}
 // ─────────────────────────────────────────
 // ACTUALS — REMOVE
 // ─────────────────────────────────────────
@@ -2745,17 +2828,85 @@ async function runAIReview() {
   }
 }
 
-function showAIResult(text) {
+// ─────────────────────────────────────────
+// AI RESULT — PARSE MARKERS
+// ─────────────────────────────────────────
+
+function parseAIResponse(raw) {
+  const extract = (tag) => {
+    const re    = new RegExp(`\\[${tag}\\]([\\s\\S]*?)\\[\\/${tag}\\]`, 'i');
+    const match = raw.match(re);
+    return match ? match[1].trim() : null;
+  };
+  return {
+    coaching:   extract('COACHING'),
+    comparison: extract('COMPARISON'),
+    questions:  extract('QUESTIONS')
+  };
+}
+
+// ─────────────────────────────────────────
+// AI RESULT — RENDER MODULAR CARDS
+// ─────────────────────────────────────────
+
+function showAIResult(raw) {
   const card    = document.getElementById('ai-review-card');
   const content = document.getElementById('ai-review-content');
   card.style.display = '';
-  content.innerHTML  = `
-    <div class="ai-review-box">
-      <div class="ai-label">🤖 Coach's Advice</div>
-      <div class="ai-text">${escHtml(text)}</div>
-    </div>
-    <button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="runAIReview()">🔄 Re-analyse</button>
-  `;
+
+  const { coaching, comparison, questions } = parseAIResponse(raw);
+
+  // ── Card builder helper ────────────────────────────────────
+  const makeCard = (emoji, title, mdText, extraClass = '') => {
+    const wrapper = document.createElement('div');
+    wrapper.className = `ai-result-card ${extraClass}`.trim();
+    wrapper.innerHTML = `
+      <div class="ai-result-card-header">
+        <span class="ai-result-card-icon">${emoji}</span>
+        <span class="ai-result-card-title">${title}</span>
+      </div>
+      <div class="ai-result-card-body">${marked.parse(mdText)}</div>
+    `;
+    return wrapper;
+  };
+
+  content.innerHTML = '';
+
+  // ── 1. Coaching — always shown ─────────────────────────────
+  if (coaching) {
+    content.appendChild(makeCard('💡', 'Coaching & Recommendations', coaching));
+  }
+
+  // ── 2. Comparison — only if actuals were loaded ────────────
+  if (comparison) {
+    content.appendChild(
+      makeCard('📊', 'Actual vs Plan Comparison', comparison, 'ai-result-card--comparison')
+    );
+  }
+
+  // ── 3. Questions — only if user asked something ────────────
+  if (questions) {
+    content.appendChild(
+      makeCard('❓', 'Your Questions', questions, 'ai-result-card--questions')
+    );
+  }
+
+  // ── Fallback — if markers failed entirely ──────────────────
+  if (!coaching && !comparison && !questions) {
+    content.innerHTML = `
+      <div class="ai-result-card">
+        <div class="ai-result-card-body">${marked.parse(raw)}</div>
+      </div>
+    `;
+  }
+
+  // ── Re-analyse button ──────────────────────────────────────
+  const reBtn = document.createElement('button');
+  reBtn.className   = 'btn btn-secondary btn-sm';
+  reBtn.style.marginTop = '10px';
+  reBtn.textContent = '🔄 Re-analyse';
+  reBtn.onclick     = runAIReview;
+  content.appendChild(reBtn);
 }
 
 function resetAIReviewUI() {
