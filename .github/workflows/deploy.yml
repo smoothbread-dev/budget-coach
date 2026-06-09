@@ -26,24 +26,15 @@ jobs:
 
       - name: Inject secrets
         env:
-          GROQ_API_KEY:    ${{ secrets.GROQ_API_KEY }}
           SUPABASE_URL:    ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY:    ${{ secrets.SUPABASE_KEY }}
         run: |
-          sed -i "s|GROQ_API_KEY_PLACEHOLDER|${GROQ_API_KEY}|g"       app.js
           sed -i "s|SUPABASE_URL_PLACEHOLDER|${SUPABASE_URL}|g"       supabase.js
           sed -i "s|SUPABASE_KEY_PLACEHOLDER|${SUPABASE_KEY}|g"       supabase.js
 
       - name: Verify injection
         run: |
           FAILED=0
-
-          if grep -q "GROQ_API_KEY_PLACEHOLDER" app.js; then
-            echo "❌ GROQ_API_KEY injection FAILED — placeholder still present!"
-            FAILED=1
-          else
-            echo "✅ GROQ_API_KEY injected successfully"
-          fi
 
           if grep -q "SUPABASE_URL_PLACEHOLDER" supabase.js; then
             echo "❌ SUPABASE_URL injection FAILED — placeholder still present!"
