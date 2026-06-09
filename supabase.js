@@ -49,7 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
       initUserMenu();
       setUserAvatar(currentUser.email);
       await initApp();
-  
+
+      console.log('PASSWORD_RECOVERY event fired');
+      console.log('Modal found:', document.getElementById('change-password-modal'));
+      
       // Automatically open the Change Password modal
       const modal = document.getElementById('change-password-modal');
       if (modal) modal.classList.remove('hidden');
