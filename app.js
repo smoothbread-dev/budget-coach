@@ -1103,16 +1103,31 @@ function renderSavingsCategoriesList() {
     // ── Months left calculation ──────────────────────────
     const monthlyAmt  = Number(cat.monthly_amount);
     const remaining   = Math.max(0, goalAmount - totalSaved);
-
+    
     let monthsLeftHTML;
     if (pct >= 100) {
       monthsLeftHTML = `<span class="months-left-value goal-reached">🎉 Goal reached!</span>`;
     } else if (monthlyAmt <= 0) {
       monthsLeftHTML = `<span class="months-left-value">—</span>`;
     } else {
-      const monthsLeft = (remaining / monthlyAmt).toFixed(1);
-      monthsLeftHTML   = `<span class="months-left-value">${monthsLeft} month${monthsLeft === '1.0' ? '' : 's'} left</span>`;
+      const monthsLeft     = remaining / monthlyAmt;
+      const monthsLeftDisp = monthsLeft.toFixed(1);
+    
+      // Calculate estimated completion month/year
+      const now            = new Date();
+      const totalMonths    = Math.floor(monthsLeft);
+      const fracDays       = Math.round((monthsLeft - totalMonths) * 30);
+      const estDate        = new Date(now.getFullYear(), now.getMonth() + totalMonths, now.getDate() + fracDays);
+      const estLabel       = estDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+    
+      monthsLeftHTML = `
+        <span class="months-left-value">
+          ${monthsLeftDisp} month${monthsLeftDisp === '1.0' ? '' : 's'} left
+          <span class="months-left-est">(est. ${estLabel})</span>
+        </span>`;
     }
+    
+    // ────────────────────────────────────────────────────
     // ────────────────────────────────────────────────────
 
     // Progress bar colour
