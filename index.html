@@ -352,20 +352,37 @@
       </div>
 
       <!-- AI Questions Section -->
-      <div class="bc-ai-questions-section">
-        <h4 class="bc-ai-questions-title">Ask the AI something specific <span class="bc-optional-label">(optional)</span></h4>
-        <div class="bc-ai-question-group">
-          <label for="ai-question-1">Question 1</label>
-          <textarea id="ai-question-1" class="bc-ai-question-input" rows="2" placeholder="e.g. How can I reduce my food spending?"></textarea>
+      <div class="bc-ai-questions-section card">
+        <div class="section-header" style="margin-bottom: 10px;">
+          <div class="section-title">
+            🤔 Ask the AI something specific
+            <span style="font-size: 0.75rem; font-weight: 400; color: var(--text-muted);">(optional)</span>
+          </div>
         </div>
-        <div class="bc-ai-question-group">
-          <label for="ai-question-2">Question 2</label>
-          <textarea id="ai-question-2" class="bc-ai-question-input" rows="2" placeholder="e.g. Am I saving enough?"></textarea>
+      
+        <p class="bc-tab-description" style="margin-bottom: 12px;">
+          Have a specific question about your plan? Add up to as many as you need — the AI will address each one directly.
+        </p>
+      
+        <!-- Dynamic questions list -->
+        <div id="ai-questions-list">
+          <!-- First question (always shown, no remove button) -->
+          <div class="ai-question-row" id="ai-question-row-1">
+            <div class="ai-question-input-wrap">
+              <textarea
+                id="ai-question-1"
+                class="form-input ai-question-textarea"
+                rows="2"
+                placeholder="e.g. How can I reduce my food spending?"
+              ></textarea>
+            </div>
+          </div>
         </div>
-        <div class="bc-ai-question-group">
-          <label for="ai-question-3">Question 3</label>
-          <textarea id="ai-question-3" class="bc-ai-question-input" rows="2" placeholder="e.g. What should I prioritise next month?"></textarea>
-        </div>
+      
+        <!-- Add question button -->
+        <button class="add-item-trigger" id="ai-add-question-btn" onclick="addAIQuestion()" style="margin-top: 10px;">
+          + Add another question
+        </button>
       </div>
 
       <!-- AI Review -->
