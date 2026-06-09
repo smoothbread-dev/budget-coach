@@ -1290,6 +1290,13 @@ body {
   color: var(--accent2);
 }
 
+.months-left-est {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin-left: 4px;
+}
+
 /* ─────────────────────────────────────────
    SAVINGS PROGRESS
 ───────────────────────────────────────── */
