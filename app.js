@@ -2808,6 +2808,12 @@ function showAIResult(text) {
     '<span class="ai-bullet"><span class="ai-bullet-dot">•</span><span>$2</span></span>'
   );
 
+  // Step 4: convert double newlines to paragraph breaks, single to <br>
+  // But skip lines that are already HTML tags (bullet spans, header spans)
+  safe = safe
+    .replace(/\n{2,}/g, '</p><p class="ai-para">')
+    .replace(/\n(?!<span)/g, '<br>');  // ← only <br> if next line is NOT a span
+
   content.innerHTML = `
     <div class="ai-review-box">
       <div class="ai-label">🤖 Coach's Advice</div>
