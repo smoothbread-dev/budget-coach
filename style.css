@@ -1787,6 +1787,50 @@ body {
 }
 
 /* ─────────────────────────────────────────
+   AI SECTION HEADER
+───────────────────────────────────────── */
+.ai-section-header {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin: 18px 0 6px 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ai-section-header:first-child {
+  margin-top: 0;
+}
+
+/* AI paragraphs */
+.ai-para {
+  margin: 0 0 10px 0;
+  line-height: 1.6;
+}
+
+.ai-para:last-child {
+  margin-bottom: 0;
+}
+
+/* AI bullet points */
+.ai-bullet {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin: 4px 0;
+  line-height: 1.5;
+}
+
+.ai-bullet-dot {
+  color: var(--accent);
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+/* ─────────────────────────────────────────
    PROMPT PREVIEW MODAL
 ───────────────────────────────────────── */
 .prompt-preview-box {
