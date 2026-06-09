@@ -356,38 +356,44 @@ function clearUserAvatar() {
 // ─────────────────────────────────────────
 
 document.getElementById('forgot-password-btn').addEventListener('click', async () => {
-  const email = document.getElementById('auth-email').value.trim();
+  const email    = document.getElementById('auth-email').value.trim();
+  const errorEl  = document.getElementById('auth-error');
+  const infoEl   = document.getElementById('auth-info');
+  const infoText = document.getElementById('auth-info-text');
 
   // Clear previous messages
-  const errorEl = document.getElementById('auth-error');
-  const infoEl  = document.getElementById('auth-info');
-  const infoText = document.getElementById('auth-info-text');
+  errorEl.classList.add('bc-hidden');
   errorEl.style.display = 'none';
+  infoEl.classList.add('bc-hidden');
   infoEl.style.display  = 'none';
 
   if (!email) {
     errorEl.textContent = 'Please enter your email address first.';
-  errorEl.style.display = 'block';
+    errorEl.classList.remove('bc-hidden');
+    errorEl.style.display = 'block';
     return;
   }
 
   try {
     const { error } = await sb.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin  // adjust if you have a dedicated reset page
+      redirectTo: window.location.origin
     });
 
     if (error) {
-      errorEl.textContent = error.message || 'Failed to send reset email. Please try again.';
+      errorEl.textContent   = error.message || 'Failed to send reset email. Please try again.';
+      errorEl.classList.remove('bc-hidden');
       errorEl.style.display = 'block';
       return;
     }
 
-    // Show success using existing auth-info box
+    // Show success
     infoText.textContent = `📧 Password reset email sent to ${email}. Check your inbox and follow the link to reset your password.`;
+    infoEl.classList.remove('bc-hidden');
     infoEl.style.display = 'block';
 
   } catch (err) {
-    errorEl.textContent = 'An unexpected error occurred. Please try again.';
+    errorEl.textContent   = 'An unexpected error occurred. Please try again.';
+    errorEl.classList.remove('bc-hidden');
     errorEl.style.display = 'block';
     console.error('Forgot password error:', err);
   }
