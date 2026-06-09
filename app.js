@@ -2793,26 +2793,31 @@ function showAIResult(text) {
   const content = document.getElementById('ai-review-content');
   card.style.display = '';
 
-  // Step 1: escape HTML first for safety
   let safe = escHtml(text);
 
-  // Step 2: convert [HEADER: ...] into styled header spans
+  // Step 1: convert [HEADER: ...] into styled header spans
   safe = safe.replace(
     /\[HEADER:\s*(.+?)\]/g,
     '<span class="ai-section-header">$1</span>'
   );
 
-  // Step 3: convert bullet lines into styled bullet items
+  // Step 2: convert bullet lines into styled bullet items
+  // Also consume the trailing newline so it doesn't become a <br>
   safe = safe.replace(
-    /^([•\-])\s+(.+)$/gm,
+    /^([•\-])\s+(.+?)\n?$/gm,
     '<span class="ai-bullet"><span class="ai-bullet-dot">•</span><span>$2</span></span>'
   );
 
-  // Step 4: convert double newlines to paragraph breaks, single to <br>
-  // But skip lines that are already HTML tags (bullet spans, header spans)
+  // Step 3: remove blank lines between consecutive bullet spans
+  safe = safe.replace(
+    /(<\/span>)\n{1,2}(?=<span class="ai-bullet">)/g,
+    '$1'
+  );
+
+  // Step 4: paragraph and line break conversion
   safe = safe
     .replace(/\n{2,}/g, '</p><p class="ai-para">')
-    .replace(/\n(?!<span)/g, '<br>');  // ← only <br> if next line is NOT a span
+    .replace(/\n(?!<span)/g, '<br>');
 
   content.innerHTML = `
     <div class="ai-review-box">
