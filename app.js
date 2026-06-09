@@ -2660,6 +2660,12 @@ Please provide:
 
 Keep the tone warm, coach-like, and honest. Format clearly with short paragraphs.`;
 
+  // Inject actuals if available
+  const actualsSection = buildActualsPromptSection();
+  if (actualsSection) {
+    prompt += `\n\n---\n${actualsSection}`;
+  }
+  
   // Append user questions if any
   const userQuestions = collectAIQuestions();
   if (userQuestions.length > 0) {
