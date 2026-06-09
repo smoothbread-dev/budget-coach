@@ -2259,10 +2259,9 @@ async function submitChangePassword() {
   const newPass     = document.getElementById('cp-new-password').value;
   const confirmPass = document.getElementById('cp-confirm-password').value;
   const errorEl     = document.getElementById('cp-error');
-  const successEl   = document.getElementById('cp-success');
+  const submitBtn   = document.querySelector('#change-password-modal .btn-primary');
 
   errorEl.classList.add('hidden');
-  successEl.classList.add('hidden');
 
   if (!newPass || newPass.length < 6) {
     errorEl.textContent = 'Password must be at least 6 characters.';
@@ -2276,7 +2275,17 @@ async function submitChangePassword() {
     return;
   }
 
+  if (submitBtn) {
+    submitBtn.disabled    = true;
+    submitBtn.textContent = '⏳ Updating…';
+  }
+
   const { error } = await sb.auth.updateUser({ password: newPass });
+
+  if (submitBtn) {
+    submitBtn.disabled    = false;
+    submitBtn.textContent = 'Update Password';
+  }
 
   if (error) {
     errorEl.textContent = error.message || 'Failed to update password.';
@@ -2284,9 +2293,11 @@ async function submitChangePassword() {
     return;
   }
 
-  successEl.textContent = '✅ Password updated successfully!';
-  successEl.classList.remove('hidden');
-
-  // Auto-close after 2 seconds
-  setTimeout(() => closeChangePasswordModal(), 2000);
+  showAlert('Your password has been updated successfully! 🎉', 'success', {
+    label: 'OK',
+    onClick: () => {
+      closeAlert();
+      closeChangePasswordModal();
+    }
+  });
 }
