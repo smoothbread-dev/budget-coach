@@ -2070,6 +2070,79 @@ function handlePanelOverlayClick(e, id) {
 }
 
 // ─────────────────────────────────────────
+// AI QUESTIONS — Dynamic list management
+// ─────────────────────────────────────────
+
+let aiQuestionCount = 1;
+
+function addAIQuestion() {
+  aiQuestionCount++;
+  const questionNumber = aiQuestionCount;
+
+  const list = document.getElementById('ai-questions-list');
+
+  const row = document.createElement('div');
+  row.className = 'ai-question-row';
+  row.id = `ai-question-row-${questionNumber}`;
+
+  row.innerHTML = `
+    <div class="ai-question-input-wrap">
+      <textarea
+        id="ai-question-${questionNumber}"
+        class="form-input ai-question-textarea"
+        rows="2"
+        placeholder="e.g. What should I prioritise next month?"
+      ></textarea>
+    </div>
+    <button
+      class="ai-question-remove-btn"
+      onclick="removeAIQuestion(${questionNumber})"
+      title="Remove this question"
+    >−</button>
+  `;
+
+  list.appendChild(row);
+}
+
+function removeAIQuestion(id) {
+  const row = document.getElementById(`ai-question-row-${id}`);
+  if (row) {
+    row.style.transition = 'opacity 0.2s, transform 0.2s';
+    row.style.opacity = '0';
+    row.style.transform = 'translateX(8px)';
+    setTimeout(() => row.remove(), 200);
+  }
+}
+
+function collectAIQuestions() {
+  const textareas = document.querySelectorAll('#ai-questions-list .ai-question-textarea');
+  const questions = [];
+  textareas.forEach(ta => {
+    const val = ta.value.trim();
+    if (val.length > 0) questions.push(val);
+  });
+  return questions;
+}
+
+function clearAIQuestions() {
+  // Reset to just 1 empty question
+  aiQuestionCount = 1;
+  const list = document.getElementById('ai-questions-list');
+  list.innerHTML = `
+    <div class="ai-question-row" id="ai-question-row-1">
+      <div class="ai-question-input-wrap">
+        <textarea
+          id="ai-question-1"
+          class="form-input ai-question-textarea"
+          rows="2"
+          placeholder="e.g. How can I reduce my food spending?"
+        ></textarea>
+      </div>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────
 // AI REVIEW
 // ─────────────────────────────────────────
 
@@ -2136,6 +2209,14 @@ Please provide:
 4. One encouraging closing remark to motivate them
 
 Keep the tone warm, coach-like, and honest. Format clearly with short paragraphs.`;
+
+  // Collect user questions and append to prompt
+  const userQuestions = collectAIQuestions();
+  
+  if (userQuestions.length > 0) {
+    const numbered = userQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n');
+    prompt += `\n\n---\nThe user has also asked the following specific questions. Please address each one directly at the end of your response under a clearly labelled "Your Questions" section:\n\n${numbered}`;
+  }
   
   const card    = document.getElementById('ai-review-card');
   const content = document.getElementById('ai-review-content');
@@ -2179,6 +2260,7 @@ Keep the tone warm, coach-like, and honest. Format clearly with short paragraphs
   } finally {
     btn.disabled    = false;
     btn.textContent = '✨ Coach Me — Analyse My Plan';
+    clearAIQuestions();
   }
 }
 
