@@ -2525,6 +2525,7 @@ Date Range: ${actuals.dateRangeLabel}
 Note: Transfer-Out and Income rows are excluded. Only expense transactions are included.
 
 Breakdown by Category:
+CRITICAL — USE THESE EXACT PLANNED VALUES. DO NOT ESTIMATE OR ROUND:
 ${catLines}
 
 When coaching, compare these real figures against this month's planned expenses.
@@ -2766,8 +2767,8 @@ async function runAIReview() {
         body:    JSON.stringify({
         model:       'llama-3.1-8b-instant',
         messages:    [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens:  1500
+        temperature: 0.1,
+        max_tokens:  3000
       })
     });
 
