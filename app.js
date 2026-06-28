@@ -2765,7 +2765,7 @@ async function runAIReview() {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
-        model:       'llama-3.1-8b-instant',
+        model:       'gpt-oss-20',
         messages:    [{ role: 'user', content: prompt }],
         temperature: 0.2,
         max_tokens:  3000
