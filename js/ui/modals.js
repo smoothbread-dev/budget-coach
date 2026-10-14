@@ -156,11 +156,14 @@ export function initModals() {
     }
 
     if (e.key === 'Tab') {
-      const items = focusables($(top.id));
+      const panel = $(top.id);
+      const items = focusables(panel);
       if (items.length === 0) return;
       const first = items[0];
       const last  = items[items.length - 1];
-      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      // Focus can still be behind the dialog if Tab is pressed before it moved in.
+      if (!panel.contains(document.activeElement)) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+      else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     }
   });

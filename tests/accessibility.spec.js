@@ -17,6 +17,7 @@ test.describe('Dialogs and keyboard', () => {
   test('Tab is trapped inside the open dialog', async ({ app, page }) => {
     await app.open({ seed: existingUser() });
     await page.locator('[data-action="add-recurring"]').evaluate(el => el.click());
+    await expect(page.locator('#panel-rec-name')).toBeFocused();
 
     for (let i = 0; i < 8; i++) {
       await page.keyboard.press('Tab');
@@ -26,6 +27,20 @@ test.describe('Dialogs and keyboard', () => {
       await page.keyboard.press('Shift+Tab');
       expect(await page.evaluate(() => !!document.activeElement.closest('#recurring-panel-overlay'))).toBe(true);
     }
+  });
+
+  test('Tab pressed while focus is behind an open dialog pulls it back in', async ({ app, page }) => {
+    await app.open({ seed: existingUser() });
+    await page.locator('[data-action="add-recurring"]').evaluate(el => el.click());
+    await expect(page.locator('#panel-rec-name')).toBeFocused();
+
+    // Focus escaping the dialog (e.g. before it moved in on a slow machine).
+    await page.evaluate(() => document.getElementById('tab-btn-planner').focus());
+    await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => !!document.activeElement.closest('#recurring-panel-overlay'))).toBe(true);
+    await page.evaluate(() => document.getElementById('tab-btn-planner').focus());
+    await page.keyboard.press('Shift+Tab');
+    expect(await page.evaluate(() => !!document.activeElement.closest('#recurring-panel-overlay'))).toBe(true);
   });
 
   test('clicking the backdrop closes a dialog; clicking inside does not', async ({ app, page }) => {
