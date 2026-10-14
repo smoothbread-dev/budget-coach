@@ -1,0 +1,22 @@
+#!/bin/sh
+# Blocks commits that would leak real Supabase values or secret keys.
+# Enabled by `npm install` (git config core.hooksPath .githooks).
+
+fail() { echo "pre-commit: $1" >&2; echo "Commit blocked." >&2; exit 1; }
+
+if git diff --cached --name-only | grep -E '(^|/)\.env[^/]*$' | grep -Ev '(^|/)\.env\.example$' | grep -q .; then
+  fail "an .env file is staged. Only .env.example may be committed."
+fi
+
+if git diff --cached --name-only | grep -qx 'js/config.js'; then
+  staged=$(git show :js/config.js)
+  echo "$staged" | grep -q "'SUPABASE_URL_PLACEHOLDER'" || fail "js/config.js must keep SUPABASE_URL_PLACEHOLDER. Put real values in .env.local."
+  echo "$staged" | grep -q "'SUPABASE_KEY_PLACEHOLDER'" || fail "js/config.js must keep SUPABASE_KEY_PLACEHOLDER. Put real values in .env.local."
+fi
+
+# Secret keys, and real Supabase URLs/keys, belong in .env.local or GitHub Secrets.
+if git diff --cached -U0 | grep -E '^\+' | grep -Eq 'sb_secret_|service_role|gsk_[A-Za-z0-9]{10,}|sb_publishable_[A-Za-z0-9_-]{10,}|[a-z0-9]{20}\.supabase\.co'; then
+  fail "staged changes contain a Supabase key/URL or API key. Use .env.local or GitHub Secrets."
+fi
+
+exit 0

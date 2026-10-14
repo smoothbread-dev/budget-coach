@@ -1,0 +1,9 @@
+node_modules/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Local secrets/config (copy .env.example to .env.local)
+.env.local
+.env*.local

@@ -1,0 +1,26 @@
+name: Supabase keep-alive
+
+# Free-tier Supabase projects pause after ~7 days without activity.
+# Note: GitHub disables scheduled workflows after 60 days with no repository commits.
+on:
+  schedule:
+    - cron: '0 3 */3 * *'   # 03:00 UTC every 3 days
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/user_defaults?select=user_id&limit=1" \
+            -H "apikey: ${SUPABASE_KEY}")
+          echo "Supabase responded with HTTP ${status}"
+          if [ "${status}" -ge 400 ]; then exit 1; fi

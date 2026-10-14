@@ -2,175 +2,148 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/x-icon"  href="./public/favicon.ico" />
-  <link rel="icon" type="image/png"     href="./public/favicon-32x32.png" sizes="32x32" />
-  <link rel="icon" type="image/png"     href="./public/favicon-16x16.png" sizes="16x16" />
-  <link rel="apple-touch-icon"          href="./public/apple-touch-icon.png" sizes="180x180" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- If AI_PROXY_URL in js/config.js changes, update connect-src below. -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' https://cdn.jsdelivr.net;
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data:;
+    connect-src 'self' https://*.supabase.co wss://*.supabase.co https://groq-proxy.henryooi0077.workers.dev;
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+  " />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
   <title>Budget Coach</title>
+  <link rel="icon" type="image/x-icon" href="./public/favicon.ico" />
+  <link rel="icon" type="image/png"    href="./public/favicon-32x32.png" sizes="32x32" />
+  <link rel="icon" type="image/png"    href="./public/favicon-16x16.png" sizes="16x16" />
+  <link rel="apple-touch-icon"         href="./public/apple-touch-icon.png" sizes="180x180" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
+<div id="boot-splash" class="boot-splash" role="status">
+  <div class="spinner"></div>
+  <span>Loading Budget Coach…</span>
+</div>
+
 <!-- ══════════════════════════════════════════
-     AUTH MODAL
+     AUTH SCREEN
 ══════════════════════════════════════════ -->
-<div id="auth-modal">
-  <div id="auth-box">
-    <h2 id="auth-title">Welcome to Budget Coach</h2>
+<div id="auth-modal" class="bc-hidden">
+  <form id="auth-form" class="auth-box" novalidate>
+    <h1 id="auth-title">Welcome Back</h1>
     <p id="auth-subtitle">Sign in to sync your data across devices</p>
 
-    <input type="email"    id="auth-email"    placeholder="Email address" />
-    <div style="position: relative; width: 100%;">
-      <input
-        type="password"
-        id="auth-password"
-        placeholder="Password"
-        style="width: 100%; padding-right: 45px; box-sizing: border-box;"
-      />
-      <button type="button" id="toggle-password" style="
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        background: none;
-        border: none;
-        cursor: pointer;
-        font-size: 1rem;
-        color: #888;
-        padding: 0;
-        line-height: 1;
-      ">
-        <svg id="icon-eye-open" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
+    <label class="sr-only" for="auth-email">Email address</label>
+    <input type="email" id="auth-email" placeholder="Email address" autocomplete="email" required />
+
+    <div class="password-wrap">
+      <label class="sr-only" for="auth-password">Password</label>
+      <input type="password" id="auth-password" placeholder="Password" autocomplete="current-password" required />
+      <button type="button" id="toggle-password" class="password-toggle" data-action="toggle-password"
+              aria-label="Show password" aria-pressed="false">
+        <svg id="icon-eye-open" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
           <circle cx="12" cy="12" r="3"/>
         </svg>
-        <svg id="icon-eye-closed" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
-          viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+        <svg id="icon-eye-closed" class="bc-hidden" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
           <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
           <line x1="1" y1="1" x2="23" y2="23"/>
         </svg>
       </button>
     </div>
+    <p id="password-hint" class="auth-hint bc-hidden">Use at least 8 characters.</p>
 
-    <!-- Forgot Password Link -->
-    <div id="forgot-password-wrap" style="
-      width: 100%;
-      text-align: right;
-      margin-top: 4px;
-      margin-bottom: 2px;
-    ">
-      <button id="forgot-password-btn" type="button" style="
-        background: none;
-        border: none;
-        color: #a09dff;
-        font-size: 0.82rem;
-        cursor: pointer;
-        padding: 0;
-        text-decoration: underline;
-      ">Forgot password?</button>
+    <div id="forgot-password-wrap" class="forgot-password-wrap">
+      <button type="button" id="forgot-password-btn" class="link-btn" data-action="forgot-password">Forgot password?</button>
     </div>
 
-    <button id="auth-submit-btn">Sign In</button>
-    <button id="auth-toggle-btn">Don't have an account? Sign Up</button>
+    <button type="submit" id="auth-submit-btn">Sign In</button>
+    <button type="button" id="auth-toggle-btn" data-action="toggle-auth-mode">Don't have an account? Sign Up</button>
 
-    <p id="auth-error" class="bc-hidden" style="color:red"></p>
+    <p id="auth-error" class="auth-error bc-hidden" role="alert"></p>
 
-    <div id="auth-info" class="bc-hidden" style="
-      background: rgba(108,99,255,0.1);
-      border: 1px solid rgba(108,99,255,0.3);
-      border-radius: 8px;
-      padding: 12px 14px;
-      font-size: 0.85rem;
-      color: #c5c3ff;
-      line-height: 1.5;
-    ">
+    <div id="auth-info" class="auth-info bc-hidden" role="status">
       <span id="auth-info-text"></span>
-      <br /><br />
-      <button id="resend-btn" class="bc-hidden" style="
-        background: none;
-        border: 1px solid rgba(108,99,255,0.4);
-        color: #a09dff;
-        padding: 6px 14px;
-        border-radius: 8px;
-        font-size: 0.82rem;
-        cursor: pointer;
-        transition: all 0.2s;
-      ">📧 Resend confirmation email</button>
+      <button type="button" id="resend-btn" class="resend-btn bc-hidden" data-action="resend-confirmation">📧 Resend confirmation email</button>
     </div>
-  </div>
+  </form>
 </div>
 
 <!-- ══════════════════════════════════════════
-     MAIN APP (hidden until logged in)
+     MAIN APP (mounted from the template after sign-in)
 ══════════════════════════════════════════ -->
-<div id="app"></div>
+<div id="app" class="bc-hidden"></div>
 
 <template id="app-template">
 
-  <!-- ══════════════════════════════════════════
-       HEADER
-  ══════════════════════════════════════════ -->
   <header class="app-header">
-
     <div class="app-logo">
-      <span>🪙</span>
+      <span aria-hidden="true">🪙</span>
       <span>Budget Coach</span>
     </div>
 
-    <nav class="nav-tabs">
-      <button class="nav-tab-btn active" id="tab-btn-planner"   onclick="switchTab('planner')">Plan</button>
-      <button class="nav-tab-btn"        id="tab-btn-recurring" onclick="switchTab('recurring')">Recurring</button>
-      <button class="nav-tab-btn"        id="tab-btn-savings"   onclick="switchTab('savings')" data-tab="savings">Savings</button>
-      <button class="nav-tab-btn"        id="tab-btn-history"   onclick="switchTab('history')">History</button>
-      <button class="nav-tab-btn"        id="tab-btn-defaults"  onclick="switchTab('defaults')">Defaults</button>
+    <nav class="nav-tabs" role="tablist" aria-label="Sections">
+      <button type="button" class="nav-tab-btn active" id="tab-btn-planner"   role="tab" aria-selected="true"  aria-controls="tab-planner"   data-action="switch-tab" data-tab="planner">Plan</button>
+      <button type="button" class="nav-tab-btn"        id="tab-btn-recurring" role="tab" aria-selected="false" aria-controls="tab-recurring" data-action="switch-tab" data-tab="recurring">Recurring</button>
+      <button type="button" class="nav-tab-btn"        id="tab-btn-savings"   role="tab" aria-selected="false" aria-controls="tab-savings"   data-action="switch-tab" data-tab="savings">Savings</button>
+      <button type="button" class="nav-tab-btn"        id="tab-btn-history"   role="tab" aria-selected="false" aria-controls="tab-history"   data-action="switch-tab" data-tab="history">History</button>
+      <button type="button" class="nav-tab-btn"        id="tab-btn-defaults"  role="tab" aria-selected="false" aria-controls="tab-defaults"  data-action="switch-tab" data-tab="defaults">Defaults</button>
     </nav>
 
-    <!-- User Avatar Dropdown -->
     <div class="user-menu" id="user-menu">
-      <button class="user-avatar-btn" id="user-avatar-btn" aria-label="User menu">
+      <button type="button" class="user-avatar-btn" id="user-avatar-btn" data-action="toggle-user-menu"
+              aria-label="User menu" aria-haspopup="menu" aria-expanded="false" aria-controls="user-dropdown">
         <span class="user-avatar-circle" id="user-avatar-initial">?</span>
-        <span class="user-avatar-chevron">▾</span>
+        <span class="user-avatar-chevron" aria-hidden="true">▾</span>
       </button>
-      <div class="user-dropdown" id="user-dropdown">
-        <div class="user-dropdown-email" id="user-dropdown-email">loading...</div>
+      <div class="user-dropdown" id="user-dropdown" role="menu">
+        <div class="user-dropdown-email" id="user-dropdown-email"></div>
         <hr class="user-dropdown-divider" />
-        <button class="user-dropdown-change-password" id="change-password-btn">🔑 Change Password</button>
+        <button type="button" class="user-dropdown-change-password" role="menuitem" data-action="open-change-password">🔑 Change Password</button>
         <hr class="user-dropdown-divider" />
-        <button class="user-dropdown-signout" id="logout-btn">🚪 Sign Out</button>
+        <button type="button" class="user-dropdown-signout" role="menuitem" data-action="sign-out">🚪 Sign Out</button>
       </div>
     </div>
-
   </header>
 
-  <!-- ══════════════════════════════════════════
-       MAIN
-  ══════════════════════════════════════════ -->
   <main class="main-content">
 
     <!-- ════════ PLAN TAB ════════ -->
-    <div id="tab-planner">
+    <section id="tab-planner" role="tabpanel" aria-labelledby="tab-btn-planner">
 
-      <!-- Purpose Banner -->
-      <div class="purpose-banner" id="purpose-banner">
-        <div class="purpose-icon">📋</div>
+      <div class="purpose-banner bc-hidden" id="purpose-banner">
+        <div class="purpose-icon" aria-hidden="true">📋</div>
         <div class="purpose-text">
           <div class="purpose-title">What is Budget Coach for?</div>
           <div class="purpose-desc">
             This app helps you <strong>plan your spending before your salary arrives</strong>.
             Each month, enter your expected income, then list your expected needs and wants.
             The app projects how much you'll save and lets your AI coach flag any issues —
-            <strong>before you spend a single ringgit</strong>.
+            <strong>before you spend a single cent</strong>.
             Think of it as a monthly rehearsal for your money. 💡
           </div>
         </div>
-        <button class="purpose-dismiss" onclick="dismissBanner()" title="Hide for this session">
-          Got it ✕
-        </button>
+        <button type="button" class="purpose-dismiss" data-action="dismiss-banner">Got it ✕</button>
+      </div>
+
+      <!-- Month Navigator -->
+      <div class="card bc-p-month-nav">
+        <div class="month-nav">
+          <div class="month-nav-center">
+            <button type="button" class="month-nav-btn" data-action="change-month" data-dir="-1" aria-label="Previous month">‹</button>
+            <button type="button" class="month-label" id="month-label" data-action="go-to-today" title="Jump to current month">—</button>
+            <button type="button" class="month-nav-btn" data-action="change-month" data-dir="1" aria-label="Next month">›</button>
+          </div>
+          <button type="button" class="month-delete-btn hidden" id="month-delete-btn" data-action="delete-month"
+                  aria-label="Delete all data for this month" title="Delete all data for this month">🗑️</button>
+        </div>
       </div>
 
       <!-- Income & Goal -->
@@ -179,40 +152,26 @@
           <div class="income-info">
             <span class="income-label">Expected Income</span>
             <span class="income-amount" id="income-display">—</span>
+            <button type="button" class="link-btn income-hint bc-hidden" id="income-hint" data-action="open-income-panel">Set this month's income →</button>
           </div>
           <div class="income-actions">
-            <div class="goal-badge" id="goal-badge" style="display:none">
+            <div class="goal-badge bc-hidden" id="goal-badge">
               🎯 <span id="goal-badge-text">0% goal</span>
             </div>
-            <button class="icon-btn" title="Edit expected income" onclick="openIncomePanel()">✎</button>
-            <button class="icon-btn" title="Edit savings goal"    onclick="openGoalPanel()">🎯</button>
+            <button type="button" class="icon-btn" data-action="open-income-panel" aria-label="Edit expected income" title="Edit expected income">✎</button>
+            <button type="button" class="icon-btn" data-action="open-goal-panel"   aria-label="Edit savings goal"    title="Edit savings goal">🎯</button>
           </div>
         </div>
-        <div class="goal-bar-wrap" id="goal-bar-wrap" style="display:none">
+        <div class="goal-bar-wrap bc-hidden" id="goal-bar-wrap">
           <div class="goal-bar-labels">
             <span>Projected Savings</span>
             <span id="goal-bar-pct-label">0% of 0%</span>
           </div>
           <div class="goal-bar-track">
-            <div class="goal-bar-fill" id="goal-bar-fill" style="width:0%"></div>
-            <div class="goal-marker"   id="goal-marker"   style="left:0%"></div>
+            <div class="goal-bar-fill" id="goal-bar-fill"></div>
+            <div class="goal-marker"   id="goal-marker"></div>
           </div>
-          <div class="goal-status" id="goal-status-text"></div>
-        </div>
-      </div>
-
-      <!-- Month Navigator -->
-      <div class="card bc-p-month-nav">
-        <div class="month-nav">
-          <div class="month-nav-center">
-            <button class="month-nav-btn" onclick="changeMonth(-1)">‹</button>
-            <span class="month-label" id="month-label">—</span>
-            <button class="month-nav-btn" onclick="changeMonth(1)">›</button>
-          </div>
-          <button class="month-delete-btn hidden" id="month-delete-btn"
-                  onclick="confirmDeleteMonth()" title="Delete all data for this month">
-            🗑️
-          </button>
+          <div class="goal-status" id="goal-status-text" aria-live="polite"></div>
         </div>
       </div>
 
@@ -220,30 +179,30 @@
       <div class="summary-strip">
         <div class="summary-tile needs">
           <span class="label">Expected Needs</span>
-          <span class="value" id="sum-needs">RM 0</span>
+          <span class="value" id="sum-needs">—</span>
         </div>
         <div class="summary-tile wants">
           <span class="label">Expected Wants</span>
-          <span class="value" id="sum-wants">RM 0</span>
+          <span class="value" id="sum-wants">—</span>
         </div>
         <div class="summary-tile savings">
           <span class="label">Projected Savings</span>
-          <span class="value" id="sum-savings">RM 0</span>
+          <span class="value" id="sum-savings">—</span>
         </div>
       </div>
 
       <!-- Total Expenses Bar -->
-      <div class="total-expenses-card" id="total-expenses-card" style="display:none">
+      <div class="total-expenses-card bc-hidden" id="total-expenses-card">
         <div class="total-expenses-row">
           <span class="total-expenses-label">📊 Total Expected Expenses</span>
           <div class="total-expenses-right">
-            <span class="total-expenses-main" id="total-exp-main">RM 0</span>
-            <span class="total-expenses-gross" id="total-exp-gross" style="display:none"></span>
-            <span class="total-expenses-pct safe" id="total-exp-pct">0%</span>
+            <span class="total-expenses-main" id="total-exp-main"></span>
+            <span class="total-expenses-gross bc-hidden" id="total-exp-gross"></span>
+            <span class="total-expenses-pct safe" id="total-exp-pct"></span>
           </div>
         </div>
         <div class="expenses-bar-track">
-          <div class="expenses-bar-fill safe" id="expenses-bar-fill" style="width:0%"></div>
+          <div class="expenses-bar-fill safe" id="expenses-bar-fill"></div>
         </div>
         <div class="bc-exp-footer">
           <span class="bc-exp-footer-text" id="total-exp-breakdown"></span>
@@ -254,18 +213,15 @@
       <!-- NEEDS -->
       <div class="card">
         <div class="section-header">
-          <div class="section-title">
-            <div class="section-dot need"></div>
-            Expected Needs
-          </div>
-          <span class="section-total" id="needs-total">RM 0</span>
+          <h2 class="section-title"><span class="section-dot need"></span>Expected Needs</h2>
+          <span class="section-total" id="needs-total"></span>
         </div>
         <div class="subsection-label">🔁 Recurring</div>
         <div id="needs-recurring-list"></div>
         <div class="subsection-label bc-mt-12">📌 One-off</div>
         <div id="needs-oneoff-list"></div>
-        <button class="add-item-trigger" onclick="toggleAddForm('needs')">+ Add Expected Need</button>
-        <div id="add-form-needs" style="display:none">
+        <button type="button" class="add-item-trigger" data-action="toggle-add-form" data-cat="needs">+ Add Expected Need</button>
+        <div id="add-form-needs" class="bc-hidden">
           <div class="add-form bc-mt-10" id="add-form-needs-inner"></div>
         </div>
       </div>
@@ -273,215 +229,138 @@
       <!-- WANTS -->
       <div class="card">
         <div class="section-header">
-          <div class="section-title">
-            <div class="section-dot want"></div>
-            Expected Wants
-          </div>
-          <span class="section-total" id="wants-total">RM 0</span>
+          <h2 class="section-title"><span class="section-dot want"></span>Expected Wants</h2>
+          <span class="section-total" id="wants-total"></span>
         </div>
         <div class="subsection-label">🔁 Recurring</div>
         <div id="wants-recurring-list"></div>
         <div class="subsection-label bc-mt-12">📌 One-off</div>
         <div id="wants-oneoff-list"></div>
-        <button class="add-item-trigger" onclick="toggleAddForm('wants')">+ Add Expected Want</button>
-        <div id="add-form-wants" style="display:none">
+        <button type="button" class="add-item-trigger" data-action="toggle-add-form" data-cat="wants">+ Add Expected Want</button>
+        <div id="add-form-wants" class="bc-hidden">
           <div class="add-form bc-mt-10" id="add-form-wants-inner"></div>
         </div>
       </div>
 
-      <!-- ════════ SAVINGS ALLOCATION (Plan Tab) ════════ -->
+      <!-- SAVINGS ALLOCATION -->
       <div class="card" id="plan-savings-card">
         <div class="section-header">
-          <div class="section-title">
-            <div class="section-dot" style="background:var(--savings)"></div>
-            💰 Savings Allocation
-          </div>
-          <span class="section-total" id="plan-savings-total">RM 0</span>
+          <h2 class="section-title"><span class="section-dot savings"></span>💰 Savings Allocation</h2>
+          <span class="section-total" id="plan-savings-total"></span>
         </div>
 
-        <p class="bc-tab-description" style="margin-bottom:12px">
+        <p class="bc-tab-description bc-mb-12">
           Allocate a portion of your projected savings to your savings goals this month.
           Amounts here are for planning only — they don't affect your projected savings figure.
         </p>
 
-        <!-- Warning banner — shown when over-allocated -->
-        <div id="plan-savings-warning" class="plan-savings-warning" style="display:none">
+        <div id="plan-savings-warning" class="plan-savings-warning bc-hidden" role="alert">
           ⚠️ You've allocated more than your projected savings! Reduce your allocations or trim your expenses.
         </div>
 
-        <!-- Allocation summary row -->
-        <div id="plan-savings-summary" class="plan-savings-summary" style="display:none">
+        <div id="plan-savings-summary" class="plan-savings-summary bc-hidden">
           <span id="plan-savings-summary-text"></span>
         </div>
 
-        <!-- List of current allocations -->
         <div id="plan-savings-list"></div>
 
-        <!-- Add allocation trigger -->
-        <button class="add-item-trigger" onclick="togglePlanSavingsForm()" id="plan-savings-add-btn">
-          + Allocate Savings
-        </button>
+        <button type="button" class="add-item-trigger" id="plan-savings-add-btn" data-action="toggle-allocation-form">+ Allocate Savings</button>
 
-        <!-- Add allocation form -->
-        <div id="plan-savings-form" style="display:none">
+        <div id="plan-savings-form" class="bc-hidden">
           <div class="add-form bc-mt-10">
-            <div class="form-row" style="margin-bottom:10px">
+            <div class="form-row bc-mb-10">
               <div class="form-field">
-                <label class="form-label">Savings Category</label>
-                <select class="form-select" id="plan-savings-category-select" onchange="onPlanSavingsCategoryChange()">
+                <label class="form-label" for="plan-savings-category-select">Savings Category</label>
+                <select class="form-select" id="plan-savings-category-select" data-change="allocation-category">
                   <option value="">— Select a category —</option>
                 </select>
               </div>
             </div>
             <div class="form-row two">
               <div class="form-field">
-                <label class="form-label">Amount (RM)</label>
-                <input class="form-input" id="plan-savings-amount" type="number" placeholder="0.00" min="0" step="0.01" />
+                <label class="form-label" for="plan-savings-amount">Amount (RM)</label>
+                <input class="form-input" id="plan-savings-amount" type="number" inputmode="decimal" placeholder="0.00" min="0" step="0.01" />
               </div>
               <div class="form-field">
-                <label class="form-label">Monthly Contribution</label>
-                <input class="form-input" id="plan-savings-monthly-hint" type="text" disabled placeholder="—" style="color:var(--text-muted)" />
+                <label class="form-label" for="plan-savings-monthly-hint">Monthly Contribution</label>
+                <input class="form-input input-readonly" id="plan-savings-monthly-hint" type="text" disabled placeholder="—" />
               </div>
             </div>
             <div class="form-actions">
-              <button class="btn btn-secondary btn-sm" onclick="togglePlanSavingsForm()">Cancel</button>
-              <button class="btn btn-primary btn-sm"   onclick="addPlanSavingsAllocation()">Add</button>
+              <button type="button" class="btn btn-secondary btn-sm" data-action="toggle-allocation-form">Cancel</button>
+              <button type="button" class="btn btn-primary btn-sm"   data-action="add-allocation">Add</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- AI Questions Section -->
+      <!-- AI QUESTIONS -->
       <div class="bc-ai-questions-section card">
-        <div class="section-header" style="margin-bottom: 10px;">
-          <div class="section-title" id="ai-questions-section-title">
+        <div class="section-header bc-mb-10">
+          <h2 class="section-title">
             🤔 Ask the AI something specific
-            <span style="font-size: 0.75rem; font-weight: 400; color: var(--text-muted);">(optional)</span>
-          </div>
+            <span class="optional-tag">(optional)</span>
+          </h2>
         </div>
-      
-        <!-- ── ACTUAL SPENDING UPLOAD ── -->
-        <div class="actuals-upload-block">
-          <div class="actuals-upload-header">
-            <span class="actuals-upload-title">📂 Upload Actual Spending</span>
-            <span class="actuals-upload-badge bc-hidden" id="actuals-loaded-badge"></span>
-          </div>
-          <p class="actuals-upload-desc">
-            Give the AI your <strong>real spending data</strong> to compare against your plan.
-            Export your <strong>last month's</strong> (or most recent) data from Money Manager
-            as <strong>.xlsx</strong> and upload it here. Only expense transactions will be read —
-            income and transfers are ignored.
-          </p>
-      
-          <!-- Upload button row -->
-          <div class="actuals-upload-row" id="actuals-upload-row">
-            <label class="actuals-upload-btn" for="actuals-file-input">
-              📎 Choose .xlsx file
-              <input
-                type="file"
-                id="actuals-file-input"
-                accept=".xlsx"
-                style="display:none"
-                onchange="handleActualsUpload(event)"
-              />
-            </label>
-            <span class="actuals-upload-hint">Last month or most recent export recommended</span>
-          </div>
-      
-          <!-- Parsed summary preview -->
-          <div class="actuals-preview" id="actuals-preview" style="display:none">
-            <div class="actuals-preview-header">
-              <div class="actuals-preview-meta" id="actuals-preview-meta"></div>
-              <button class="actuals-remove-btn" onclick="removeActuals()">✕ Remove</button>
-            </div>
-            <div class="actuals-preview-cats" id="actuals-preview-cats"></div>
-          </div>
-        </div>
-      
-        <div class="actuals-divider"></div>
-      
-        <p class="bc-tab-description" style="margin-bottom: 12px;">
-          Have a specific question about your plan? Add up to as many as you need — the AI will address each one directly.
+        <p class="bc-tab-description bc-mb-12">
+          Have a specific question about your plan? Add up to 5 — the AI will address each one directly.
         </p>
-      
-        <!-- Dynamic questions list -->
-        <div id="ai-questions-list">
-          <div class="ai-question-row" id="ai-question-row-1">
-            <div class="ai-question-input-wrap">
-              <textarea
-                id="ai-question-1"
-                class="form-input ai-question-textarea"
-                rows="2"
-                placeholder="e.g. How can I reduce my food spending?"
-              ></textarea>
-            </div>
-          </div>
-        </div>
-      
-        <!-- Add question button -->
-        <button class="add-item-trigger" id="ai-add-question-btn" onclick="addAIQuestion()" style="margin-top: 10px;">
-          + Add another question
-        </button>
+        <div id="ai-questions-list"></div>
+        <button type="button" class="add-item-trigger bc-mt-10" id="ai-add-question-btn" data-action="add-question">+ Add another question</button>
       </div>
 
-      <!-- AI Review -->
-      <div id="ai-review-card" class="ai-review-card">
+      <!-- AI REVIEW -->
+      <div id="ai-review-card" class="ai-review-card" aria-live="polite">
         <div class="ai-review-header">
-          <div class="card-title">🤖 Coach's Advice</div>
-          <button
-            class="btn btn-secondary btn-sm"
-            onclick="openPromptPreview()"
-            id="prompt-preview-btn"
-            title="Preview the prompt sent to the AI"
-          >
-            👁️ Preview Prompt
-          </button>
+          <h2 class="card-title">🤖 Coach's Advice</h2>
+          <button type="button" class="btn btn-secondary btn-sm" id="prompt-preview-btn" data-action="open-prompt-preview"
+                  title="Preview the prompt sent to the AI">👁️ Preview Prompt</button>
         </div>
         <div id="ai-review-content"></div>
       </div>
 
-    </div><!-- /tab-planner -->
+    </section>
 
     <!-- ════════ RECURRING TAB ════════ -->
-    <div id="tab-recurring" style="display:none">
+    <section id="tab-recurring" class="bc-hidden" role="tabpanel" aria-labelledby="tab-btn-recurring">
       <div class="card">
         <div class="section-header">
-          <div class="section-title">🔁 Recurring Items</div>
-          <button class="btn btn-primary btn-sm" onclick="openRecurringPanel()">+ Add</button>
+          <h2 class="section-title">🔁 Recurring Items</h2>
+          <button type="button" class="btn btn-primary btn-sm" data-action="add-recurring">+ Add</button>
         </div>
         <p class="bc-tab-description">
           These are your default recurring expenses. When adding items in the Plan tab, select
-          <strong style="color:var(--text)">Recurring</strong> type to pick from this list —
+          <strong>Recurring</strong> type to pick from this list —
           the amount will auto-fill but you can still edit it. Changing a value here only updates
           the default; it won't affect amounts already in your monthly plans.
         </p>
         <div id="recurring-master-list"></div>
       </div>
-    </div>
+    </section>
 
     <!-- ════════ SAVINGS TAB ════════ -->
-    <div id="tab-savings" style="display:none">
+    <section id="tab-savings" class="bc-hidden" role="tabpanel" aria-labelledby="tab-btn-savings">
       <div class="card">
         <div class="section-header">
-          <div class="section-title">💰 Savings Categories</div>
-          <button class="btn btn-primary btn-sm" onclick="openAddSavingsCategoryModal()">+ Add Category</button>
+          <h2 class="section-title">💰 Savings Categories</h2>
+          <button type="button" class="btn btn-primary btn-sm" data-action="add-savings-category">+ Add Category</button>
         </div>
         <div id="savings-categories-list"></div>
       </div>
-    </div>
+    </section>
 
     <!-- ════════ HISTORY TAB ════════ -->
-    <div id="tab-history" style="display:none">
+    <section id="tab-history" class="bc-hidden" role="tabpanel" aria-labelledby="tab-btn-history">
       <div class="card">
-        <div class="card-title">📖 Plan History</div>
+        <h2 class="card-title">📖 Plan History</h2>
         <div id="history-grid" class="history-grid"></div>
       </div>
-    </div>
+    </section>
 
     <!-- ════════ DEFAULTS TAB ════════ -->
-    <div id="tab-defaults" style="display:none">
+    <section id="tab-defaults" class="bc-hidden" role="tabpanel" aria-labelledby="tab-btn-defaults">
       <div class="card">
-        <div class="card-title">⚙️ Default Values</div>
+        <h2 class="card-title">⚙️ Default Values</h2>
         <p class="bc-tab-description">
           These defaults are suggested whenever you open a new month with no data. You can always
           override them per month in the Plan tab.
@@ -492,7 +371,7 @@
             <span class="defaults-row-sub">Starting income suggested for new months</span>
           </div>
           <span class="defaults-row-value" id="defaults-income-display">Not set</span>
-          <button class="icon-btn" onclick="openDefaultIncomePanel()">✎</button>
+          <button type="button" class="icon-btn" data-action="open-default-income" aria-label="Edit default income">✎</button>
         </div>
         <div class="defaults-row">
           <div class="defaults-row-info">
@@ -500,447 +379,367 @@
             <span class="defaults-row-sub">Target savings % suggested for new months</span>
           </div>
           <span class="defaults-row-value" id="defaults-goal-display">Not set</span>
-          <button class="icon-btn" onclick="openDefaultGoalPanel()">✎</button>
+          <button type="button" class="icon-btn" data-action="open-default-goal" aria-label="Edit default savings goal">✎</button>
         </div>
       </div>
-    </div>
+    </section>
 
   </main>
 
-  <!-- ══════════════════════════════════════════
-       COACH ME BUTTON
-  ══════════════════════════════════════════ -->
+  <!-- COACH ME BUTTON -->
   <div class="coach-me-wrap" id="coach-me-wrap">
-    <button class="coach-me-btn" id="coach-me-btn" onclick="runAIReview()">
-      ✨ Coach Me — Analyse My Plan
-    </button>
+    <button type="button" class="coach-me-btn" id="coach-me-btn" data-action="run-review">✨ Coach Me — Analyse My Plan</button>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       SAVE TOAST
-  ══════════════════════════════════════════ -->
-  <div class="save-toast" id="save-toast">
+  <!-- SAVE TOAST -->
+  <div class="save-toast" id="save-toast" role="status" aria-live="polite">
     <div class="spinner" id="toast-spinner"></div>
-    <span id="toast-label">Saving…</span>
+    <span id="toast-label"></span>
   </div>
 
   <!-- ══════════════════════════════════════════
-       FIRST-TIME SETUP PANEL
+       PANELS
   ══════════════════════════════════════════ -->
-  <div class="panel-overlay" id="setup-panel-overlay">
-    <div class="panel-box">
-      <div class="panel-title">👋 Welcome to Budget Coach!</div>
+
+  <!-- First-time setup -->
+  <div class="panel-overlay" id="setup-panel-overlay" aria-hidden="true">
+    <div class="panel-box" role="dialog" aria-modal="true" aria-labelledby="setup-title">
+      <h2 class="panel-title" id="setup-title">👋 Welcome to Budget Coach!</h2>
       <div class="panel-subtitle">
         Let's set your default income and savings goal. These will be used as starting values
         whenever you open a new month — you can always change them per month or update them
         in the Defaults tab.
       </div>
       <div class="panel-field">
-        <label class="panel-label">Default Monthly Income (RM)</label>
+        <label class="panel-label" for="setup-income">Default Monthly Income (RM)</label>
         <div class="currency-wrap">
           <span class="currency-prefix">RM</span>
-          <input class="panel-input" id="setup-income" type="number" placeholder="e.g. 5000" />
+          <input class="panel-input" id="setup-income" type="number" inputmode="decimal" min="0" step="0.01" placeholder="e.g. 5000" />
         </div>
       </div>
       <div class="panel-field">
-        <label class="panel-label">Default Savings Goal (%)</label>
-        <input class="panel-input" id="setup-goal" type="number" placeholder="e.g. 20" min="0" max="100" />
+        <label class="panel-label" for="setup-goal">Default Savings Goal (%)</label>
+        <input class="panel-input" id="setup-goal" type="number" inputmode="decimal" placeholder="e.g. 20" min="0" max="100" />
       </div>
       <div class="panel-actions">
-        <button class="btn btn-secondary" onclick="skipSetup()">Skip for now</button>
-        <button class="btn btn-primary"   onclick="saveSetup()">Let's go! 🚀</button>
+        <button type="button" class="btn btn-secondary" data-action="skip-setup">Skip for now</button>
+        <button type="button" class="btn btn-primary"   data-action="save-setup">Let's go! 🚀</button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       USE DEFAULTS PROMPT
-  ══════════════════════════════════════════ -->
-  <div class="panel-overlay" id="defaults-prompt-overlay">
-    <div class="panel-box">
-      <div class="panel-title" id="defaults-prompt-title">New Month</div>
+  <!-- New month: use defaults? -->
+  <div class="panel-overlay" id="defaults-prompt-overlay" aria-hidden="true">
+    <div class="panel-box" role="dialog" aria-modal="true" aria-labelledby="defaults-prompt-title">
+      <h2 class="panel-title" id="defaults-prompt-title">New Month</h2>
       <div class="panel-subtitle" id="defaults-prompt-subtitle"></div>
-      <div class="prompt-option" onclick="applyDefaults()">
-        <div class="prompt-option-title">✅ Use my defaults</div>
-        <div class="prompt-option-sub" id="defaults-prompt-values"></div>
-      </div>
-      <div class="prompt-option" onclick="enterOwnValues()">
-        <div class="prompt-option-title">✏️ Enter my own values for this month</div>
-        <div class="prompt-option-sub">I'll type in a different income or savings goal</div>
+      <button type="button" class="prompt-option" data-action="apply-defaults">
+        <span class="prompt-option-title">✅ Use my defaults</span>
+        <span class="prompt-option-sub" id="defaults-prompt-values"></span>
+      </button>
+      <button type="button" class="prompt-option" data-action="enter-own-values">
+        <span class="prompt-option-title">✏️ Enter my own values for this month</span>
+        <span class="prompt-option-sub">I'll type in a different income or savings goal</span>
+      </button>
+      <div class="panel-actions">
+        <button type="button" class="btn btn-secondary" data-action="close-panel" data-target="defaults-prompt-overlay">Not now</button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       INCOME PANEL
-  ══════════════════════════════════════════ -->
-  <div class="panel-overlay" id="income-panel-overlay">
-    <div class="panel-box">
-      <div class="panel-title">Expected Income 💰</div>
+  <!-- Income -->
+  <div class="panel-overlay" id="income-panel-overlay" aria-hidden="true">
+    <div class="panel-box" role="dialog" aria-modal="true" aria-labelledby="income-panel-title">
+      <h2 class="panel-title" id="income-panel-title">Expected Income 💰</h2>
       <div class="panel-subtitle">Enter your expected take-home income for this month.</div>
       <div class="panel-field">
-        <label class="panel-label">Income Amount</label>
+        <label class="panel-label" for="panel-income">Income Amount</label>
         <div class="currency-wrap">
           <span class="currency-prefix">RM</span>
-          <input class="panel-input" id="panel-income" type="number" placeholder="0.00" />
+          <input class="panel-input" id="panel-income" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" />
         </div>
       </div>
       <div class="panel-actions">
-        <button class="btn btn-secondary" onclick="cancelIncomePanel()">Cancel</button>
-        <button class="btn btn-primary"   onclick="saveIncomePanel()">Save</button>
+        <button type="button" class="btn btn-secondary" data-action="close-panel" data-target="income-panel-overlay">Cancel</button>
+        <button type="button" class="btn btn-primary"   data-action="save-income-panel">Save</button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       SAVINGS GOAL PANEL
-  ══════════════════════════════════════════ -->
-  <div class="panel-overlay" id="goal-panel-overlay">
-    <div class="panel-box">
-      <div class="panel-title" id="goal-panel-title">Savings Goal 🎯</div>
+  <!-- Savings goal -->
+  <div class="panel-overlay" id="goal-panel-overlay" aria-hidden="true">
+    <div class="panel-box" role="dialog" aria-modal="true" aria-labelledby="goal-panel-title">
+      <h2 class="panel-title" id="goal-panel-title">Savings Goal 🎯</h2>
       <div class="panel-subtitle" id="goal-panel-subtitle">What % of income do you want to save this month?</div>
       <div class="panel-field">
-        <label class="panel-label">Savings Goal %</label>
+        <label class="panel-label" for="panel-goal">Savings Goal %</label>
         <div class="currency-wrap">
           <span class="currency-prefix">%</span>
-          <input class="panel-input" id="panel-goal" type="number" min="1" max="100" placeholder="e.g. 20" />
+          <input class="panel-input" id="panel-goal" type="number" inputmode="decimal" min="1" max="100" placeholder="e.g. 20" />
         </div>
       </div>
       <div class="panel-actions">
-        <button class="btn btn-secondary" id="goal-panel-cancel-btn"
-                onclick="closePanel('goal-panel-overlay')">Cancel</button>
-        <button class="btn btn-primary"   onclick="saveGoalPanel()">Save</button>
+        <button type="button" class="btn btn-secondary" data-action="close-panel" data-target="goal-panel-overlay">Cancel</button>
+        <button type="button" class="btn btn-primary"   data-action="save-goal-panel">Save</button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       DEFAULT INCOME PANEL
-  ══════════════════════════════════════════ -->
-  <div class="panel-overlay" id="default-income-panel-overlay">
-    <div class="panel-box">
-      <div class="panel-title">Default Income 💰</div>
+  <!-- Default income -->
+  <div class="panel-overlay" id="default-income-panel-overlay" aria-hidden="true">
+    <div class="panel-box" role="dialog" aria-modal="true" aria-labelledby="default-income-title">
+      <h2 class="panel-title" id="default-income-title">Default Income 💰</h2>
       <div class="panel-subtitle">Suggested whenever you open a new month with no income set.</div>
       <div class="panel-field">
-        <label class="panel-label">Default Income (RM)</label>
+        <label class="panel-label" for="panel-default-income">Default Income (RM)</label>
         <div class="currency-wrap">
           <span class="currency-prefix">RM</span>
-          <input class="panel-input" id="panel-default-income" type="number" placeholder="0.00" />
+          <input class="panel-input" id="panel-default-income" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" />
         </div>
       </div>
       <div class="panel-actions">
-        <button class="btn btn-secondary" onclick="closePanel('default-income-panel-overlay')">Cancel</button>
-        <button class="btn btn-primary"   onclick="saveDefaultIncomePanel()">Save</button>
+        <button type="button" class="btn btn-secondary" data-action="close-panel" data-target="default-income-panel-overlay">Cancel</button>
+        <button type="button" class="btn btn-primary"   data-action="save-default-income">Save</button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       DEFAULT GOAL PANEL
-  ══════════════════════════════════════════ -->
-  <div class="panel-overlay" id="default-goal-panel-overlay">
-    <div class="panel-box">
-      <div class="panel-title">Default Savings Goal 🎯</div>
+  <!-- Default goal -->
+  <div class="panel-overlay" id="default-goal-panel-overlay" aria-hidden="true">
+    <div class="panel-box" role="dialog" aria-modal="true" aria-labelledby="default-goal-title">
+      <h2 class="panel-title" id="default-goal-title">Default Savings Goal 🎯</h2>
       <div class="panel-subtitle">Suggested whenever you open a new month with no savings goal set.</div>
       <div class="panel-field">
-        <label class="panel-label">Default Savings Goal (%)</label>
-        <input class="panel-input" id="panel-default-goal" type="number" placeholder="e.g. 20" min="0" max="100" />
+        <label class="panel-label" for="panel-default-goal">Default Savings Goal (%)</label>
+        <input class="panel-input" id="panel-default-goal" type="number" inputmode="decimal" placeholder="e.g. 20" min="0" max="100" />
       </div>
       <div class="panel-actions">
-        <button class="btn btn-secondary" onclick="closePanel('default-goal-panel-overlay')">Cancel</button>
-        <button class="btn btn-primary"   onclick="saveDefaultGoalPanel()">Save</button>
+        <button type="button" class="btn btn-secondary" data-action="close-panel" data-target="default-goal-panel-overlay">Cancel</button>
+        <button type="button" class="btn btn-primary"   data-action="save-default-goal">Save</button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       RECURRING ITEM PANEL
-  ══════════════════════════════════════════ -->
-  <div class="panel-overlay" id="recurring-panel-overlay">
-    <div class="panel-box">
-      <div class="panel-title" id="recurring-panel-title">Add Recurring Item</div>
+  <!-- Recurring item -->
+  <div class="panel-overlay" id="recurring-panel-overlay" aria-hidden="true">
+    <div class="panel-box" role="dialog" aria-modal="true" aria-labelledby="recurring-panel-title">
+      <h2 class="panel-title" id="recurring-panel-title">Add Recurring Item</h2>
       <div class="panel-subtitle">This item will appear in the dropdown when adding recurring expenses to any month's plan.</div>
       <div class="panel-field">
-        <label class="panel-label">Item Name</label>
-        <input class="panel-input" id="panel-rec-name" type="text" placeholder="e.g. Rent" />
+        <label class="panel-label" for="panel-rec-name">Item Name</label>
+        <input class="panel-input" id="panel-rec-name" type="text" maxlength="100" placeholder="e.g. Rent" />
       </div>
       <div class="panel-field">
-        <label class="panel-label">Default Amount (RM)</label>
+        <label class="panel-label" for="panel-rec-amount">Default Amount (RM)</label>
         <div class="currency-wrap">
           <span class="currency-prefix">RM</span>
-          <input class="panel-input" id="panel-rec-amount" type="number" placeholder="0.00" />
+          <input class="panel-input" id="panel-rec-amount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" />
         </div>
       </div>
       <div class="panel-actions">
-        <button class="btn btn-secondary" onclick="closePanel('recurring-panel-overlay')">Cancel</button>
-        <button class="btn btn-primary"   id="recurring-panel-save-btn" onclick="saveRecurringPanel()">Add</button>
+        <button type="button" class="btn btn-secondary" data-action="close-panel" data-target="recurring-panel-overlay">Cancel</button>
+        <button type="button" class="btn btn-primary"   id="recurring-panel-save-btn" data-action="save-recurring">Add</button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       EDIT PLAN ITEM PANEL
-  ══════════════════════════════════════════ -->
-  <div class="panel-overlay" id="edit-item-panel-overlay">
-    <div class="panel-box">
-      <div class="panel-title">Edit Item ✏️</div>
+  <!-- Edit plan item -->
+  <div class="panel-overlay" id="edit-item-panel-overlay" aria-hidden="true">
+    <div class="panel-box" role="dialog" aria-modal="true" aria-labelledby="edit-item-title">
+      <h2 class="panel-title" id="edit-item-title">Edit Item ✏️</h2>
       <div class="panel-subtitle">Update this item's details.</div>
       <input type="hidden" id="edit-item-id" />
       <div class="panel-field">
-        <label class="panel-label">Item Name</label>
-        <input class="panel-input" id="edit-item-name" type="text" placeholder="Item name" />
+        <label class="panel-label" for="edit-item-name">Item Name</label>
+        <input class="panel-input" id="edit-item-name" type="text" maxlength="100" placeholder="Item name" />
       </div>
       <div class="panel-field">
-        <label class="panel-label">Amount (RM)</label>
+        <label class="panel-label" for="edit-item-amount">Amount (RM)</label>
         <div class="currency-wrap">
           <span class="currency-prefix">RM</span>
-          <input class="panel-input" id="edit-item-amount" type="number" placeholder="0.00" />
+          <input class="panel-input" id="edit-item-amount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" />
         </div>
       </div>
       <div class="panel-field">
-        <label class="panel-label">Category</label>
-        <select class="panel-select" id="edit-item-category" onchange="toggleEditFundedField()">
+        <label class="panel-label" for="edit-item-category">Category</label>
+        <select class="panel-select" id="edit-item-category" data-change="edit-item-funded">
           <option value="needs">Need</option>
           <option value="wants">Want</option>
         </select>
       </div>
       <div class="panel-field">
-        <label class="panel-label">Type</label>
-        <select class="panel-select" id="edit-item-type" onchange="toggleEditFundedField()">
+        <label class="panel-label" for="edit-item-type">Type</label>
+        <select class="panel-select" id="edit-item-type" data-change="edit-item-funded">
           <option value="recurring">Recurring</option>
           <option value="oneoff">One-off</option>
         </select>
       </div>
-      <div id="edit-funded-wrap" style="display:none; margin-bottom:14px">
+      <div id="edit-funded-wrap" class="bc-hidden bc-mb-14">
         <label class="funded-check-wrap">
           <input type="checkbox" id="edit-item-funded" />
           <span class="funded-check-label">💰 Funded from saved-up money (won't affect projected savings)</span>
         </label>
       </div>
       <div class="panel-actions">
-        <button class="btn btn-secondary" onclick="closePanel('edit-item-panel-overlay')">Cancel</button>
-        <button class="btn btn-primary"   onclick="saveEditItem()">Save Changes</button>
+        <button type="button" class="btn btn-secondary" data-action="close-panel" data-target="edit-item-panel-overlay">Cancel</button>
+        <button type="button" class="btn btn-primary"   data-action="save-edit-item">Save Changes</button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       SAVINGS CATEGORY MODAL
-  ══════════════════════════════════════════ -->
-  <div id="savings-category-modal" class="panel-overlay">
-    <div class="panel-box">
-      <div class="panel-title" id="savings-category-modal-title">Add Savings Category</div>
+  <!-- Savings category -->
+  <div class="panel-overlay" id="savings-category-modal" aria-hidden="true">
+    <div class="panel-box" role="dialog" aria-modal="true" aria-labelledby="savings-category-modal-title">
+      <h2 class="panel-title" id="savings-category-modal-title">Add Savings Category</h2>
       <div class="panel-subtitle">Set a name, monthly contribution and goal amount.</div>
-
-      <input type="hidden" id="savings-category-id">
-
+      <input type="hidden" id="savings-category-id" />
       <div class="panel-field">
-        <label class="panel-label">Category Name</label>
-        <input type="text" id="savings-category-name" class="panel-input"
-               placeholder="e.g. Emergency Fund, Holiday, New Car">
+        <label class="panel-label" for="savings-category-name">Category Name</label>
+        <input type="text" id="savings-category-name" class="panel-input" maxlength="100"
+               placeholder="e.g. Emergency Fund, Holiday, New Car" />
       </div>
-
       <div class="panel-field">
-        <label class="panel-label">Monthly Contribution (RM)</label>
+        <label class="panel-label" for="savings-category-monthly">Monthly Contribution (RM)</label>
         <div class="currency-wrap">
           <span class="currency-prefix">RM</span>
-          <input type="number" id="savings-category-monthly" class="panel-input"
-                 placeholder="e.g. 200" min="0" step="0.01">
+          <input type="number" id="savings-category-monthly" class="panel-input" inputmode="decimal" placeholder="e.g. 200" min="0" step="0.01" />
         </div>
       </div>
-
       <div class="panel-field">
-        <label class="panel-label">Goal Amount (RM)</label>
+        <label class="panel-label" for="savings-category-goal">Goal Amount (RM)</label>
         <div class="currency-wrap">
           <span class="currency-prefix">RM</span>
-          <input type="number" id="savings-category-goal" class="panel-input"
-                 placeholder="e.g. 5000" min="0.01" step="0.01">
+          <input type="number" id="savings-category-goal" class="panel-input" inputmode="decimal" placeholder="e.g. 5000" min="0.01" step="0.01" />
         </div>
       </div>
-
       <div class="panel-actions">
-        <button class="btn btn-secondary" onclick="closeSavingsCategoryModal()">Cancel</button>
-        <button class="btn btn-primary"   onclick="submitSavingsCategoryModal()">Save</button>
+        <button type="button" class="btn btn-secondary" data-action="close-panel" data-target="savings-category-modal">Cancel</button>
+        <button type="button" class="btn btn-primary"   data-action="save-savings-category">Save</button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       SAVINGS ADJUSTMENT MODAL
-  ══════════════════════════════════════════ -->
-  <div id="savings-adjustment-modal" class="panel-overlay">
-    <div class="panel-box">
-      <div class="panel-title" id="savings-adjustment-modal-title">Add Adjustment</div>
-      <div class="panel-subtitle">
-        Record a deposit (+) or withdrawal (−) for this savings category.
-      </div>
-
-      <input type="hidden" id="savings-adjustment-category-id">
-
+  <!-- Savings adjustment -->
+  <div class="panel-overlay" id="savings-adjustment-modal" aria-hidden="true">
+    <div class="panel-box" role="dialog" aria-modal="true" aria-labelledby="savings-adjustment-modal-title">
+      <h2 class="panel-title" id="savings-adjustment-modal-title">Add Adjustment</h2>
+      <div class="panel-subtitle">Record a deposit (+) or withdrawal (−) for this savings category.</div>
+      <input type="hidden" id="savings-adjustment-category-id" />
       <div class="panel-field">
-        <label class="panel-label">Amount (RM) — use negative to deduct</label>
+        <label class="panel-label" for="savings-adjustment-amount">Amount (RM) — use negative to deduct</label>
         <div class="currency-wrap">
           <span class="currency-prefix">RM</span>
-          <input type="number" id="savings-adjustment-amount" class="panel-input"
-                 placeholder="e.g. 500 or -200" step="0.01">
+          <input type="number" id="savings-adjustment-amount" class="panel-input" placeholder="e.g. 500 or -200" step="0.01" />
         </div>
       </div>
-
       <div class="panel-field">
-        <label class="panel-label">Note (optional)</label>
-        <input type="text" id="savings-adjustment-note" class="panel-input"
-               placeholder="e.g. Bonus contribution, Emergency withdrawal">
+        <label class="panel-label" for="savings-adjustment-note">Note (optional)</label>
+        <input type="text" id="savings-adjustment-note" class="panel-input" maxlength="200"
+               placeholder="e.g. Bonus contribution, Emergency withdrawal" />
       </div>
-
       <div class="panel-actions">
-        <button class="btn btn-secondary" onclick="closePanel('savings-adjustment-modal')">Cancel</button>
-        <button class="btn btn-primary"   onclick="submitSavingsAdjustment()">Save Adjustment</button>
+        <button type="button" class="btn btn-secondary" data-action="close-panel" data-target="savings-adjustment-modal">Cancel</button>
+        <button type="button" class="btn btn-primary"   data-action="save-adjustment">Save Adjustment</button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       HISTORY DETAIL MODAL
-  ══════════════════════════════════════════ -->
-  <div class="modal-overlay" id="history-modal" onclick="handleModalOverlayClick(event)">
-    <div class="modal-sheet">
+  <!-- Edit plan savings allocation -->
+  <div class="panel-overlay" id="edit-plan-savings-panel-overlay" aria-hidden="true">
+    <div class="panel-box" role="dialog" aria-modal="true" aria-labelledby="edit-plan-savings-title">
+      <h2 class="panel-title" id="edit-plan-savings-title">Edit Savings Allocation ✏️</h2>
+      <div class="panel-subtitle" id="edit-plan-savings-subtitle">Update the allocated amount for this category.</div>
+      <input type="hidden" id="edit-plan-savings-id" />
+      <div class="panel-field">
+        <label class="panel-label" for="edit-plan-savings-cat-name">Category</label>
+        <input class="panel-input input-readonly" id="edit-plan-savings-cat-name" type="text" disabled />
+      </div>
+      <div class="panel-field">
+        <label class="panel-label" for="edit-plan-savings-amount">Allocated Amount (RM)</label>
+        <div class="currency-wrap">
+          <span class="currency-prefix">RM</span>
+          <input class="panel-input" id="edit-plan-savings-amount" type="number" inputmode="decimal" placeholder="0.00" min="0" step="0.01" />
+        </div>
+      </div>
+      <div class="panel-actions">
+        <button type="button" class="btn btn-secondary" data-action="close-panel" data-target="edit-plan-savings-panel-overlay">Cancel</button>
+        <button type="button" class="btn btn-primary"   data-action="save-edit-allocation">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History detail -->
+  <div class="modal-overlay" id="history-modal" aria-hidden="true">
+    <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="modal-month-title">
       <div class="modal-header">
-        <span class="modal-title" id="modal-month-title">—</span>
-        <button class="modal-close" onclick="closeHistoryModal()">✕</button>
+        <h2 class="modal-title" id="modal-month-title">—</h2>
+        <button type="button" class="modal-close" data-action="close-panel" data-target="history-modal" aria-label="Close">✕</button>
       </div>
       <div id="modal-body"></div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       CONFIRMATION MODAL
-  ══════════════════════════════════════════ -->
-  <div class="panel-overlay" id="confirm-modal-overlay">
-    <div class="panel-box">
-      <div class="panel-title" id="confirm-modal-title">Are you sure?</div>
+  <!-- Prompt preview -->
+  <div class="panel-overlay" id="prompt-preview-overlay" aria-hidden="true">
+    <div class="panel-box prompt-preview-box" role="dialog" aria-modal="true" aria-labelledby="prompt-preview-title">
+      <h2 class="panel-title" id="prompt-preview-title">👁️ Prompt Preview</h2>
+      <div class="panel-subtitle">This is the exact prompt that will be sent to the AI coach. Read-only.</div>
+      <pre id="prompt-preview-content" class="prompt-preview-pre"></pre>
+      <div class="panel-actions">
+        <button type="button" class="btn btn-secondary" data-action="close-panel" data-target="prompt-preview-overlay">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change password -->
+  <div class="panel-overlay" id="change-password-modal" aria-hidden="true">
+    <div class="panel-box" role="dialog" aria-modal="true" aria-labelledby="cp-title">
+      <h2 class="panel-title" id="cp-title">🔐 Change Password</h2>
+      <div class="panel-subtitle">Enter and confirm your new password below (at least 8 characters).</div>
+      <div class="panel-field">
+        <label class="panel-label" for="cp-new-password">New Password</label>
+        <input type="password" id="cp-new-password" class="panel-input" autocomplete="new-password" placeholder="Enter new password" />
+      </div>
+      <div class="panel-field">
+        <label class="panel-label" for="cp-confirm-password">Confirm New Password</label>
+        <input type="password" id="cp-confirm-password" class="panel-input" autocomplete="new-password" placeholder="Confirm new password" />
+      </div>
+      <div id="cp-error" class="cp-error bc-hidden" role="alert"></div>
+      <div class="panel-actions">
+        <button type="button" class="btn btn-secondary" data-action="close-panel" data-target="change-password-modal">Cancel</button>
+        <button type="button" class="btn btn-primary"   data-action="submit-change-password">Update Password</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm -->
+  <div class="panel-overlay" id="confirm-modal-overlay" aria-hidden="true">
+    <div class="panel-box" role="alertdialog" aria-modal="true" aria-labelledby="confirm-modal-title" aria-describedby="confirm-modal-message">
+      <h2 class="panel-title" id="confirm-modal-title">Are you sure?</h2>
       <div class="panel-subtitle" id="confirm-modal-message"></div>
       <div class="panel-actions">
-        <button class="btn btn-secondary" id="confirm-modal-cancel">Cancel</button>
-        <button class="btn btn-danger"    id="confirm-modal-ok">Delete</button>
+        <button type="button" class="btn btn-secondary" id="confirm-modal-cancel" data-action="confirm-cancel">Cancel</button>
+        <button type="button" class="btn btn-danger"    id="confirm-modal-ok"     data-action="confirm-ok">Delete</button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       ALERT MODAL
-  ══════════════════════════════════════════ -->
-  <div id="alert-modal-overlay" class="panel-overlay">
-    <div class="panel-box" onclick="event.stopPropagation()" style="max-width:400px">
-      <div class="panel-title" id="alert-modal-title">Warning</div>
+  <!-- Alert -->
+  <div class="panel-overlay alert-overlay" id="alert-modal-overlay" aria-hidden="true">
+    <div class="panel-box alert-box" role="alertdialog" aria-modal="true" aria-labelledby="alert-modal-title" aria-describedby="alert-modal-message">
+      <h2 class="panel-title" id="alert-modal-title">Warning</h2>
       <div class="panel-subtitle" id="alert-modal-message"></div>
-      <div class="panel-actions">
-        <button class="btn btn-primary" onclick="closeAlert()">OK</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
-       PROMPT PREVIEW MODAL
-  ══════════════════════════════════════════ -->
-  <div class="panel-overlay" id="prompt-preview-overlay">
-    <div class="panel-box prompt-preview-box" onclick="event.stopPropagation()">
-  
-      <div class="panel-title">
-        👁️ Prompt Preview
-      </div>
-      <div class="panel-subtitle">
-        This is the exact prompt that will be sent to the AI coach. Read-only.
-      </div>
-  
-      <pre id="prompt-preview-content" class="prompt-preview-pre"></pre>
-  
-      <div class="panel-actions">
-        <button class="btn btn-secondary" onclick="closePromptPreview()">Close</button>
-      </div>
-  
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
-       EDIT PLAN SAVINGS ALLOCATION PANEL
-  ══════════════════════════════════════════ -->
-  <div class="panel-overlay" id="edit-plan-savings-panel-overlay">
-    <div class="panel-box">
-      <div class="panel-title">Edit Savings Allocation ✏️</div>
-      <div class="panel-subtitle" id="edit-plan-savings-subtitle">
-        Update the allocated amount for this category.
-      </div>
-  
-      <input type="hidden" id="edit-plan-savings-id" />
-  
-      <div class="panel-field">
-        <label class="panel-label">Category</label>
-        <input class="panel-input" id="edit-plan-savings-cat-name"
-               type="text" disabled
-               style="color:var(--text-muted); cursor:not-allowed;" />
-      </div>
-  
-      <div class="panel-field">
-        <label class="panel-label">Allocated Amount (RM)</label>
-        <div class="currency-wrap">
-          <span class="currency-prefix">RM</span>
-          <input class="panel-input" id="edit-plan-savings-amount"
-                 type="number" placeholder="0.00" min="0" step="0.01" />
-        </div>
-      </div>
-  
-      <div class="panel-actions">
-        <button class="btn btn-secondary"
-                onclick="closePanel('edit-plan-savings-panel-overlay')">Cancel</button>
-        <button class="btn btn-primary"
-                onclick="saveEditPlanSavingsAllocation()">Save Changes</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════
-       CHANGE PASSWORD MODAL
-  ══════════════════════════════════════════ -->
-  <div id="change-password-modal" class="panel-overlay">
-    <div class="panel-box" onclick="event.stopPropagation()">
-  
-      <div class="panel-title">🔐 Change Password</div>
-      <div class="panel-subtitle">Enter and confirm your new password below.</div>
-  
-      <div class="panel-field">
-        <label class="panel-label">New Password</label>
-        <input type="password" id="cp-new-password" class="panel-input" placeholder="Enter new password">
-      </div>
-  
-      <div class="panel-field">
-        <label class="panel-label">Confirm New Password</label>
-        <input type="password" id="cp-confirm-password" class="panel-input" placeholder="Confirm new password">
-      </div>
-  
-      <div id="cp-error" class="cp-message cp-error hidden" style="color:red; font-size:0.85rem; margin-bottom:8px;"></div>
-      <div id="cp-success" class="cp-message cp-success hidden" style="color:#6cffb0; font-size:0.85rem; margin-bottom:8px;"></div>
-  
-      <div class="panel-actions">
-        <button class="btn btn-secondary" onclick="closeChangePasswordModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="submitChangePassword()">Update Password</button>
-      </div>
-  
+      <div class="panel-actions" id="alert-modal-actions"></div>
     </div>
   </div>
 
 </template>
 
-<!-- SheetJS — for parsing .xlsx files client-side -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  
-<!-- 1. Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<!-- 2. Supabase config + auth -->
-<script src="supabase.js"></script>
-
-<!-- 3. App logic -->
-<script src="app.js"></script>
+<!-- Supabase SDK (pinned + Subresource Integrity). Update both version and hash together. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"
+        integrity="sha384-BWcjm9OdFth9TbhCxZPdm+gAOUMAzQy9nmTs12ioXdCcbVnJaPMn+fMUoQCLt60R"
+        crossorigin="anonymous"></script>
+<script type="module" src="js/main.js"></script>
 
 </body>
 </html>

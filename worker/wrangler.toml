@@ -1,0 +1,16 @@
+name = "groq-proxy"
+main = "groq-proxy.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+# Comma-separated list of sites allowed to call the proxy.
+ALLOWED_ORIGINS = "https://smoothbread-dev.github.io,http://localhost:8080"
+
+# Per-user limit: 10 AI requests per 60 seconds.
+[[ratelimits]]
+name = "AI_RATE_LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 10
+  period = 60

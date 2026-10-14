@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,47 +19,42 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Inject secrets
-        env:
-          SUPABASE_URL:    ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY:    ${{ secrets.SUPABASE_KEY }}
+      # Only publish the files the app needs (not worker/, supabase/, notes, etc.).
+      - name: Assemble site
         run: |
-          sed -i "s|SUPABASE_URL_PLACEHOLDER|${SUPABASE_URL}|g"       supabase.js
-          sed -i "s|SUPABASE_KEY_PLACEHOLDER|${SUPABASE_KEY}|g"       supabase.js
+          mkdir _site
+          cp -r index.html style.css js public _site/
+
+      - name: Inject config
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          sed -i "s|SUPABASE_URL_PLACEHOLDER|${SUPABASE_URL}|g" _site/js/config.js
+          sed -i "s|SUPABASE_KEY_PLACEHOLDER|${SUPABASE_KEY}|g" _site/js/config.js
 
       - name: Verify injection
         run: |
-          FAILED=0
-
-          if grep -q "SUPABASE_URL_PLACEHOLDER" supabase.js; then
-            echo "❌ SUPABASE_URL injection FAILED — placeholder still present!"
-            FAILED=1
-          else
-            echo "✅ SUPABASE_URL injected successfully"
-          fi
-
-          if grep -q "SUPABASE_KEY_PLACEHOLDER" supabase.js; then
-            echo "❌ SUPABASE_KEY injection FAILED — placeholder still present!"
-            FAILED=1
-          else
-            echo "✅ SUPABASE_KEY injected successfully"
-          fi
-
-          if [ $FAILED -ne 0 ]; then
-            echo "🚫 One or more injections failed — aborting deploy!"
+          if grep -q "_PLACEHOLDER" _site/js/config.js; then
+            echo "❌ Config injection failed — placeholder still present. Check repository secrets."
             exit 1
           fi
+          echo "✅ Config injected"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./
+          path: ./_site
 
   deploy:
     runs-on: ubuntu-latest
