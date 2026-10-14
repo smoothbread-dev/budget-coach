@@ -15,7 +15,8 @@ if git diff --cached --name-only | grep -qx 'js/config.js'; then
 fi
 
 # Secret keys, and real Supabase URLs/keys, belong in .env.local or GitHub Secrets.
-if git diff --cached -U0 | grep -E '^\+' | grep -Eq 'sb_secret_|service_role|gsk_[A-Za-z0-9]{10,}|sb_publishable_[A-Za-z0-9_-]{10,}|[a-z0-9]{20}\.supabase\.co'; then
+# This file is excluded because its own patterns would otherwise match.
+if git diff --cached -U0 -- . ':(exclude).githooks' | grep -E '^\+' | grep -Eq 'sb_secret_|service_role|gsk_[A-Za-z0-9]{10,}|sb_publishable_[A-Za-z0-9_-]{10,}|[a-z0-9]{20}\.supabase\.co'; then
   fail "staged changes contain a Supabase key/URL or API key. Use .env.local or GitHub Secrets."
 fi
 
